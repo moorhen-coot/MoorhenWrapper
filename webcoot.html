@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" class="stop-scrolling">
+<head>
+  <title>Moorhen</title>
+  <base href="[[baseurl]]" />
+  <meta charset="utf-8"/>
+  <link rel="icon"             href="./favicon.ico"/>
+  <meta name="viewport"        content="width=device-width,initial-scale=1"/>
+  <meta name="theme-color"     content="#000000"/>
+  <meta name="description"     content="Moorhen is a molecular graphics web application based on the Coot desktop program."/>
+  <link rel="apple-touch-icon" href="./public/logo192.png"/>
+  <link rel="manifest"         href="./manifest.json"/>
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script>// See https://github.com/facebook/react/issues/20829#issuecomment-802088260
+    if (!crossOriginIsolated) SharedArrayBuffer = ArrayBuffer;
+  </script>
+  <script src="./baby-gru/wasm/web_example.js"></script>
+  <script src="./moorhen.js"      charset="utf-8"></script>
+  <script type="text/javascript"  defer="defer">
+
+    const rootId      = 'root';
+    const mode        = 'building';
+    const inputFiles  = [ 
+      {type: 'pdb', args: [ `./baby-gru/tutorials/moorhen-tutorial-structure-number-1.pdb`, `mol-1` ]},
+      {type: 'mtz', args: [
+        `./baby-gru/tutorials/moorhen-tutorial-map-number-1.mtz`,
+        `diff-map-1`,
+        { F: "DELFWT", PHI: "PHDELWT", isDifference: true, useWeight: false },
+        { positiveDiffColour: { r: 0.0, g: 1.0, b: 0.0 }, negativeDiffColour: { r: 1.0, g: 0.0, b: 0.0 } }
+      ]},
+      {type: 'mtz', args: [
+        `./baby-gru/tutorials/moorhen-tutorial-map-number-1.mtz`,
+        `map-1`,
+        { isDifference: false, useWeight: false, calcStructFact: true,  F: "FWT", PHI: "PHWT", Fobs: 'FP', SigFobs: 'SIGFP', FreeR: 'FREE' },
+        { mapColour: { r: 0.0, g: 0.0, b: 1.0 } }
+      ]}
+    ];
+    const urlPrefix   = '.';
+
+    let moorhenWrapper = new moorhen.MoorhenWrapper ( urlPrefix );
+    moorhenWrapper.setAceDRGMakeLinkCallback(
+      (atomOneFormData, atomTwoFormData) => {
+        console.log(atomOneFormData)
+        console.log(atomTwoFormData)
+      }
+    )
+
+    switch (mode)  {  
+      case "view-update" : moorhenWrapper.setWorkMode         ( 'view' );
+                           moorhenWrapper.setRootId           ( rootId );
+                           moorhenWrapper.setInputFiles       ( inputFiles );
+                           moorhenWrapper.start()
+                       break;
+      case "view" :        moorhenWrapper.setWorkMode         ( 'view' );
+                           moorhenWrapper.setRootId           ( rootId );
+                           moorhenWrapper.setInputFiles       ( inputFiles );
+                           moorhenWrapper.start()
+                       break;
+      default            :  moorhenWrapper.setRootId            ( rootId );
+                            moorhenWrapper.setInputFiles        ( inputFiles );
+                            moorhenWrapper.start()
+    }
+
+</script>
+</body>
+</html>
