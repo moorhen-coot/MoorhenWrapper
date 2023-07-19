@@ -6,7 +6,7 @@ import { MoorhenLegendToast } from './MoorhenLegendToast'
 import { webGL } from "moorhen/types/mgWebGL";
 import { moorhen } from "moorhen/types/moorhen"
 
-export interface MoorhenCloudControlsInterface extends moorhen.MoorhenControlsInterface {
+export interface MoorhenCloudControlsInterface extends moorhen.Controls {
     setNotifyNewContent: React.Dispatch<React.SetStateAction<boolean>>;
     setLegendText: React.Dispatch<React.SetStateAction<JSX.Element>>;
     setBusyFetching: React.Dispatch<React.SetStateAction<boolean>>;
@@ -16,7 +16,7 @@ const initialMoleculesState: moorhen.Molecule[] = []
 
 const initialMapsState: moorhen.Map[] = []
 
-interface MoorhenCloudAppPropsInterface extends moorhen.MoorhenContainerPropsInterface {
+interface MoorhenCloudAppPropsInterface extends moorhen.ContainerProps {
     exportCallback: (arg0: string, arg1: string) => Promise<void>;
     onChangePreferencesListener: (context: moorhen.Context) => void;
 }
