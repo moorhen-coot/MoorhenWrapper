@@ -51,7 +51,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     mapsRef.current = maps as moorhen.Map[]
     activeMapRef.current = activeMap
 
-    const forwardCollectedControls = useCallback((controls: moorhen.MoorhenControlsInterface) => {
+    const forwardCollectedControls = useCallback((controls: moorhen.Controls) => {
         let collectedControls: MoorhenCloudControlsInterface = {
             setLegendText, setBusyFetching, setNotifyNewContent, ...controls
         }
