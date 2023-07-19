@@ -1,4 +1,4 @@
-import { moorhen } from "moorhen"
+import { moorhen } from "moorhen/types/moorhen"
 import { guid } from "./utils"
 
 export interface CloudBackupInterface extends moorhen.backupKey {

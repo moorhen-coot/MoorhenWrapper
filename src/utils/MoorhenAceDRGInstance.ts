@@ -1,4 +1,4 @@
-import { moorhen } from "moorhen"
+import { moorhen } from "moorhen/types/moorhen"
 
 export class MoorhenAceDRGInstance implements moorhen.AceDRGInstance {
     createCovalentLink: (atomOneFormData: moorhen.createCovLinkAtomInput, atomTwoFormData: moorhen.createCovLinkAtomInput) => void;
