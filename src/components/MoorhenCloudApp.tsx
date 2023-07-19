@@ -1,13 +1,12 @@
 import { useRef, useState, useReducer, useContext, useEffect, useCallback } from 'react'
 import { MenuItem } from '@mui/material'
-import { MoorhenContext, MoorhenContainer } from "moorhen"
-import { MoorhenContainerPropsInterface, MoorhenControlsInterface } from "../../../src/components/MoorhenContainer"
-import { itemReducer } from "../../../src/utils/MoorhenUtils"
+import { MoorhenContext, MoorhenContainer, itemReducer } from "moorhen"
 import { isDarkBackground } from "../utils/utils"
 import { MoorhenLegendToast } from './MoorhenLegendToast'
-import { webGL, moorhen } from "moorhen";
+import { webGL } from "moorhen/types/mgWebGL";
+import { moorhen } from "moorhen/types/moorhen"
 
-export interface MoorhenCloudControlsInterface extends MoorhenControlsInterface {
+export interface MoorhenCloudControlsInterface extends moorhen.MoorhenControlsInterface {
     setNotifyNewContent: React.Dispatch<React.SetStateAction<boolean>>;
     setLegendText: React.Dispatch<React.SetStateAction<JSX.Element>>;
     setBusyFetching: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,7 +16,7 @@ const initialMoleculesState: moorhen.Molecule[] = []
 
 const initialMapsState: moorhen.Map[] = []
 
-interface MoorhenCloudAppPropsInterface extends MoorhenContainerPropsInterface {
+interface MoorhenCloudAppPropsInterface extends moorhen.MoorhenContainerPropsInterface {
     exportCallback: (arg0: string, arg1: string) => Promise<void>;
     onChangePreferencesListener: (context: moorhen.Context) => void;
 }
@@ -52,7 +51,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     mapsRef.current = maps as moorhen.Map[]
     activeMapRef.current = activeMap
 
-    const forwardCollectedControls = useCallback((controls: MoorhenControlsInterface) => {
+    const forwardCollectedControls = useCallback((controls: moorhen.MoorhenControlsInterface) => {
         let collectedControls: MoorhenCloudControlsInterface = {
             setLegendText, setBusyFetching, setNotifyNewContent, ...controls
         }
