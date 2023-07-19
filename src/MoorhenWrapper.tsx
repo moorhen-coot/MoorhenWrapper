@@ -4,14 +4,12 @@ import localforage from 'localforage';
 import parse from 'html-react-parser';
 import { MoorhenCloudApp, MoorhenCloudControlsInterface } from './components/MoorhenCloudApp';
 import { CloudBackupInterface, CloudStorageInstance, CloudStorageInstanceInterface } from "./utils/MoorhenCloudTimeCapsule"
+import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import { guid } from './utils/utils';
 import { MoorhenMolecule, MoorhenMap, MoorhenContextProvider, getDefaultContextValues } from "moorhen";
 import { moorhen } from "moorhen/types/moorhen"
 import { libcootApi } from "moorhen/types/libcoot"
-/*
-import { getDefaultContextValues } from "../../src/utils/MoorhenContext";
-*/
-import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
+import reportWebVitals from "./reportWebVitals"
 
 
 declare var createCCP4Module: (arg0: any) => Promise<libcootApi.CCP4ModuleType>;
@@ -229,7 +227,7 @@ export default class MoorhenWrapper {
 }
 
   async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
-    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef) as moorhen.Map
+    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef)
     newMap.litLines = this.context.defaultMapLitLines
     newMap.uniqueId = uniqueId
     
