@@ -86,7 +86,8 @@
     "worker-loader": "^3.0.8"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build-cloud-dev": "webpack  --mode development --devtool inline-source-map --env destination='ccp4Cloud'",
+    "build-cloud": "webpack --mode production --env destination='ccp4Cloud'"
   },
   "repository": {
     "type": "git",

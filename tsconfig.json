@@ -5,7 +5,7 @@
         "module": "es6",
         "target": "es6",
         "rootDir": "./",
-        "types": ["node", "./src/types"],
+        "types": ["node"],
         "lib": ["esnext", "es6", "dom", "dom.Iterable", "es2017", "WebWorker"],
         "skipLibCheck": true,
         "esModuleInterop": true,
