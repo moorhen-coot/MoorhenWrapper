@@ -1,10 +1,10 @@
 import { useRef, useState, useReducer, useContext, useEffect, useCallback } from 'react'
-import { MenuItem } from '@mui/material'
-import { MoorhenContext, MoorhenContainer, itemReducer } from "moorhen"
-import { isDarkBackground } from "../utils/utils"
+import { itemReducer, MoorhenContainer, MoorhenContext } from "moorhen"
 import { MoorhenLegendToast } from './MoorhenLegendToast'
-import { webGL } from "moorhen/types/mgWebGL";
+import { MoorhenExitMenu } from "./MoorhenExitMenu"
 import { moorhen } from "moorhen/types/moorhen"
+import { webGL } from "moorhen/types/mgWebGL"
+import { LogoutOutlined } from '@mui/icons-material'
 
 export interface MoorhenCloudControlsInterface extends moorhen.Controls {
     setNotifyNewContent: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,10 +17,9 @@ const initialMoleculesState: moorhen.Molecule[] = []
 const initialMapsState: moorhen.Map[] = []
 
 interface MoorhenCloudAppPropsInterface extends moorhen.ContainerProps {
-    exportCallback: (arg0: string, arg1: string) => Promise<void>;
+    exitCallback: () => Promise<void>;
     onChangePreferencesListener: (context: moorhen.Context) => void;
 }
-
 
 export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     const glRef = useRef<webGL.MGWebGL | null>(null)
@@ -30,8 +29,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     const mapsRef = useRef<moorhen.Map[] | null>(null)
     const activeMapRef = useRef<moorhen.Map | null>(null)
     const lastHoveredAtom = useRef<moorhen.HoveredAtom | null>(null)
-    const isDirty = useRef<boolean>(false)
-    const busyContouring = useRef<boolean>(false)
+    const exitDialActionRef = useRef(null)
     const context = useContext<undefined | moorhen.Context>(MoorhenContext)
     const [activeMap, setActiveMap] = useState<moorhen.Map | null>(null)
     const [hoveredAtom, setHoveredAtom] = useState<moorhen.HoveredAtom>({ molecule: null, cid: null })
@@ -42,7 +40,6 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     const [cootInitialized, setCootInitialized] = useState<boolean>(false)
     const [showToast, setShowToast] = useState<boolean>(false)
     const [toastContent, setToastContent] = useState<JSX.Element | null>(null)
-    const [showColourRulesToast, setShowColourRulesToast] = useState<boolean>(false)
     const [legendText, setLegendText] = useState<string | JSX.Element>('Loading, please wait...')
     const [busyFetching, setBusyFetching] = useState<boolean>(false)
     const [notifyNewContent, setNotifyNewContent] = useState<boolean>(false)
@@ -63,120 +60,17 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         activeMapRef, lastHoveredAtom, context, activeMap, setActiveMap,
         busy, setBusy, molecules: molecules as moorhen.Molecule[], changeMolecules,
         maps: maps as moorhen.Map[], changeMaps, backgroundColor, setBackgroundColor,
-        cootInitialized, setCootInitialized, setShowColourRulesToast, hoveredAtom, setHoveredAtom,
-        showToast, setShowToast, toastContent, setToastContent, showColourRulesToast,
+        cootInitialized, setCootInitialized, hoveredAtom, setHoveredAtom,
+        showToast, setShowToast, toastContent, setToastContent,
     }
-
-    const doExportCallback = useCallback(async () => {
-        let moleculePromises = molecules.map((molecule: moorhen.Molecule) => {return molecule.getAtoms()})
-        let moleculeAtoms = await Promise.all(moleculePromises)
-        molecules.forEach((molecule, index) => props.exportCallback(molecule.name, moleculeAtoms[index].data.result.pdbData))
-    }, [props.exportCallback, molecules])
-
-    const exportMenuItem =  <MenuItem key={'export-cloud'} id='cloud-export-menu-item' onClick={doExportCallback}>
-                                Save current model
-                            </MenuItem>
-
-    const doContourIfDirty = async () => {
-        if (isDirty.current) {
-            busyContouring.current = true
-            isDirty.current = false
-            await Promise.all(
-                maps.map((map: moorhen.Map) => {
-                  return map.doCootContour(
-                    ...glRef.current.origin.map(coord => -coord) as [number, number, number], map.mapRadius, map.contourLevel
-                  )     
-                })
-            )
-            busyContouring.current = false
-            doContourIfDirty()
-        }
+    
+    const exitMenu = {
+        icon: <LogoutOutlined/>,
+        name: 'Exit',
+        ref: exitDialActionRef,
+        JSXElement: <MoorhenExitMenu molecules={molecules as moorhen.Molecule[]} exitCallback={props.exitCallback} glRef={glRef}/>
     }
-
-    const triggerMapContour = () => {
-        isDirty.current = true
-        if (!busyContouring.current) {
-            doContourIfDirty()
-        }
-    }
-
-    const handleOriginUpdate = useCallback(async () => {
-        if (props.viewOnly) {
-            triggerMapContour()
-        }
-    }, [props.viewOnly, maps, glRef])
     
-    const handleRadiusChangeCallback = useCallback(async (evt) => {
-        if (props.viewOnly) {
-            maps.forEach((map: moorhen.Map) => {
-                const newRadius = map.mapRadius + parseInt(evt.detail.factor)
-                map.mapRadius = newRadius
-            })
-            triggerMapContour()
-        }
-    }, [props.viewOnly, maps, glRef])
-    
-    const handleWheelContourLevelCallback = useCallback(async (evt) => {
-        if (props.viewOnly) {
-            maps.forEach((map: moorhen.Map) => {
-                const newLevel = evt.detail.factor > 1 ? map.contourLevel + 0.1 : map.contourLevel - 0.1
-                map.contourLevel = newLevel
-          })
-            triggerMapContour()
-        }
-    }, [props.viewOnly, maps, glRef])
-    
-    useEffect(() => {
-        document.addEventListener("originUpdate", handleOriginUpdate)
-        return () => {
-            document.removeEventListener("originUpdate", handleOriginUpdate)
-        }
-    }, [handleOriginUpdate])
-
-    useEffect(() => {
-        document.addEventListener("mapRadiusChanged", handleRadiusChangeCallback)
-        return () => {
-            document.removeEventListener("mapRadiusChanged", handleRadiusChangeCallback)
-        }
-    }, [handleRadiusChangeCallback])
-
-    useEffect(() => {
-        document.addEventListener("wheelContourLevelChanged", handleWheelContourLevelCallback)
-        return () => {
-            document.removeEventListener("wheelContourLevelChanged", handleWheelContourLevelCallback)
-        }
-    }, [handleWheelContourLevelCallback])
-
-    useEffect(() => {
-        if (props.viewOnly && maps.length > 0) {
-            maps.forEach((map: moorhen.Map) => {
-                map.doCootContour(
-                    ...glRef.current.origin.map(coord => -coord) as [number, number, number], 13.0, 0.8
-              )
-            })
-        }
-    }, [maps])
-
-    useEffect(() => {
-        const redrawMolecules = async () => {
-            if (!props.viewOnly || molecules.length === 0 || glRef.current.background_colour === null) {
-                return
-            }
-            const newBackgroundIsDark = isDarkBackground(...glRef.current.background_colour)
-            await Promise.all(molecules.map((molecule: moorhen.Molecule) => {
-                if (molecule.cootBondsOptions.isDarkBackground !== newBackgroundIsDark) {
-                    molecule.cootBondsOptions.isDarkBackground = newBackgroundIsDark
-                    molecule.setAtomsDirty(true)
-                    return molecule.redraw()
-                }
-                return Promise.resolve()
-            }))
-        }
-
-        redrawMolecules()
-
-    }, [glRef.current?.background_colour])
-
     useEffect(() => {
         if (!Object.keys(context).some(key => context[key] === null)) {
             props.onChangePreferencesListener(
@@ -198,8 +92,8 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
             <MoorhenContainer
                 {...collectedProps} 
                 allowScripting={false}
-                extraFileMenuItems={[exportMenuItem]}
                 forwardControls={forwardCollectedControls}
+                extraNavBarMenus={[exitMenu]}
                 />
             {props.viewOnly && 
             <MoorhenLegendToast backgroundColor={backgroundColor} hoveredAtom={hoveredAtom} busyFetching={busyFetching} notifyNewContent={notifyNewContent} legendText={legendText}/>

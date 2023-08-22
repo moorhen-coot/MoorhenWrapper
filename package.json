@@ -99,6 +99,6 @@
   },
   "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
   "dependencies": {
-    "moorhen": "file:moorhen-0.2.1.tgz"
+    "moorhen": "file:moorhen-0.4.1.tgz"
   }
 }
