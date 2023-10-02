@@ -267,7 +267,7 @@ export default class MoorhenWrapper {
   }
 
   async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
-    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef)
+    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef) as unknown as moorhen.Map
     newMap.litLines = this.context.defaultMapLitLines
     newMap.uniqueId = uniqueId
     
@@ -299,7 +299,7 @@ export default class MoorhenWrapper {
   }
 
   async loadPdbData(uniqueId: string, inputFile: string, molName: string): Promise<moorhen.Molecule> {
-    const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary)
+    const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary) as unknown as moorhen.Molecule
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -329,7 +329,7 @@ export default class MoorhenWrapper {
           commandArgs: [ligandName, -999999, 0, 0, 0]
         }, true)
         if (getMonomerResult.data.result.status === "Completed" && getMonomerResult.data.result.result !== -1) {
-          const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary)
+          const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary) as unknown as moorhen.Molecule
           newMolecule.molNo = getMonomerResult.data.result.result
           newMolecule.name = ligandName
           newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour)
