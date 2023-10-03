@@ -20,6 +20,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/node": "^18.16.14",
     "@types/react": "^18.2.6",
+    "acorn": "^8.10.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^9.1.0",
@@ -98,6 +99,6 @@
   },
   "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
   "dependencies": {
-    "moorhen": "https://github.com/moorhen-coot/Moorhen/releases/download/v0.4.3/moorhen-0.4.3.tgz"
+    "moorhen": "https://github.com/moorhen-coot/Moorhen/releases/download/v0.5.0/moorhen-0.5.0.tgz"
   }
 }

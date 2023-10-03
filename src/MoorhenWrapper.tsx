@@ -267,7 +267,7 @@ export default class MoorhenWrapper {
   }
 
   async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
-    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef) as unknown as moorhen.Map
+    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef)
     newMap.litLines = this.context.defaultMapLitLines
     newMap.uniqueId = uniqueId
     
@@ -299,7 +299,7 @@ export default class MoorhenWrapper {
   }
 
   async loadPdbData(uniqueId: string, inputFile: string, molName: string): Promise<moorhen.Molecule> {
-    const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary) as unknown as moorhen.Molecule
+    const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary) as moorhen.Molecule
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -307,7 +307,7 @@ export default class MoorhenWrapper {
         this.cachedLigandDictionaries.forEach(ligandDict => ligandDict && newMolecule.addDictShim(ligandDict))
         newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour)
         await newMolecule.loadToCootFromURL(inputFile, molName)
-        await newMolecule.fetchIfDirtyAndDraw('CBs')
+        await newMolecule.fetchIfDirtyAndDraw(newMolecule.atomCount >= 50000 ? 'CRs' : 'CBs')
         this.controls.changeMolecules({ action: "Add", item: newMolecule })
         if (!this.viewSettings) {
           await newMolecule.centreOn()
@@ -548,7 +548,7 @@ export default class MoorhenWrapper {
     const moleculeAtoms = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms()))
 
     const molData = selectedMolecules.map((molecule, index) => {
-        return {molName: molecule.name, pdbData: moleculeAtoms[index].data.result.pdbData}
+        return {molName: molecule.name, pdbData: moleculeAtoms[index]}
     })
 
     const viewData: moorhen.viewDataSession = {

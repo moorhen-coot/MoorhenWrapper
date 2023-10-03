@@ -57,7 +57,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
 
     const collectedProps = {
         ...props, glRef, timeCapsuleRef, commandCentre, moleculesRef, mapsRef, 
-        activeMapRef, lastHoveredAtom, context, activeMap, setActiveMap,
+        activeMapRef, lastHoveredAtom, activeMap, setActiveMap,
         busy, setBusy, molecules: molecules as moorhen.Molecule[], changeMolecules,
         maps: maps as moorhen.Map[], changeMaps, backgroundColor, setBackgroundColor,
         cootInitialized, setCootInitialized, hoveredAtom, setHoveredAtom,
