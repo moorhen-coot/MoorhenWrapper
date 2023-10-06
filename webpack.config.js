@@ -27,11 +27,6 @@ module.exports = (env, argv) => {
             from: paths.publicBabyGru,
             to: paths.dist + '/baby-gru/',
             toType: 'dir',
-          },
-          {
-            from: path.resolve(__dirname, 'webcoot.html'),
-            to: paths.dist,
-            toType: 'dir',
           }
         ],
       }),
