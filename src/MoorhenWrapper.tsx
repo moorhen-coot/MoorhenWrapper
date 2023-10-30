@@ -2,11 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { MoorhenCloudApp, MoorhenCloudControlsInterface } from './components/MoorhenCloudApp';
 import { CloudBackupInterface, CloudStorageInstance, CloudStorageInstanceInterface } from "./utils/MoorhenCloudTimeCapsule"
-import { MoorhenMap, MoorhenMolecule, MoorhenContextProvider, getDefaultContextValues } from "moorhen"
+import { MoorhenMap, MoorhenMolecule, MoorhenReduxProvider, MoorhenPreferences, addMap, setActiveMap, addMolecule } from "moorhen"
 import { guid } from "./utils/utils"
 import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import reportWebVitals from './reportWebVitals'
-import localforage from 'localforage';
 import parse from 'html-react-parser';
 import { moorhen } from "moorhen/types/moorhen";
 import { libcootApi } from "moorhen/types/libcoot";
@@ -60,13 +59,13 @@ export default class MoorhenWrapper {
   workMode: "build" | "view" | "view-update";
   inputFiles: (PdbInputFileType | MapInputFileType | LegendInputFileType | LigandInputFileType)[]
   rootId: string;
-  context: moorhen.ContextValues;
-  cachedContext: moorhen.ContextValues;
+  preferences: moorhen.PreferencesValues;
+  cachedPreferences: moorhen.PreferencesValues;
   cachedLegend: string;
   cachedLigandDictionaries: string[];
   noDataLegendMessage: JSX.Element;
   exitCallback: (viewSettings: moorhen.viewDataSession, molData?: { molName: string; pdbData: string; }[]) => Promise<void>;
-  exportPreferencesCallback: (arg0: moorhen.ContextValues) => void;
+  exportPreferencesCallback: (arg0: moorhen.PreferencesValues) => void;
   backupStorageInstance: CloudStorageInstanceInterface;
   aceDRGInstance: moorhen.AceDRGInstance;
   viewSettings: moorhen.viewDataSession;
@@ -79,8 +78,8 @@ export default class MoorhenWrapper {
     this.workMode = 'build'
     this.inputFiles = null
     this.rootId = null
-    this.context = null
-    this.cachedContext = null
+    this.preferences = null
+    this.cachedPreferences = null
     this.cachedLegend = null
     this.cachedLigandDictionaries = []
     this.noDataLegendMessage = parse('<div></div>') as JSX.Element
@@ -153,8 +152,8 @@ export default class MoorhenWrapper {
     }
   }
 
-  setPreferences(context: moorhen.ContextValues) {
-    this.context = context
+  setPreferences(preferences: moorhen.PreferencesValues) {
+    this.preferences = preferences
   }
 
   setRootId(rootId: string) {
@@ -179,23 +178,34 @@ export default class MoorhenWrapper {
     this.exitCallback = callbackFunction
   }
 
-  addOnChangePreferencesListener(callbackFunction: (arg0: moorhen.ContextValues) => void) {
+  addOnChangePreferencesListener(callbackFunction: (arg0: moorhen.PreferencesValues) => void) {
     this.exportPreferencesCallback = callbackFunction
   }
 
-  onChangePreferencesListener(context: moorhen.ContextValues): void {
-    const objectKeys = ['shortCuts', 'defaultBackgroundColor', 'defaultUpdatingScores']
-    context['version'] = this.cachedContext.version
-    for (const key of Object.keys(this.cachedContext)) {
-      if (!objectKeys.includes(key) && this.cachedContext[key] !== context[key]) {
-        this.exportPreferencesCallback(context)
-        this.cachedContext = context  
+  onChangePreferencesListener(key: string, value: any): void {
+    switch (key) {
+      
+      case 'defaultBackgroundColor':
+      case 'defaultUpdatingScores':
+        if (JSON.stringify(this.cachedPreferences[key]) !== JSON.stringify(value)) {
+          this.cachedPreferences[key] = value
+          this.exportPreferencesCallback(this.cachedPreferences)    
+        }
         break
-      } else if (objectKeys.includes(key) && JSON.stringify(this.cachedContext[key]) !== JSON.stringify(context[key])) {
-        this.exportPreferencesCallback(context)
-        this.cachedContext = context  
+      
+      case 'shortCuts':
+        if (JSON.stringify(this.cachedPreferences[key]) !== value) {
+          this.cachedPreferences[key] = JSON.parse(value)
+          this.exportPreferencesCallback(this.cachedPreferences)
+        }
         break
-      }
+      
+      default:
+        if (this.cachedPreferences[key] !== value) {
+          this.cachedPreferences[key] = value
+          this.exportPreferencesCallback(this.cachedPreferences)
+        }
+        break
     }
   }
 
@@ -204,25 +214,26 @@ export default class MoorhenWrapper {
     this.controls = controls
   }
 
-  async importPreferences(newContext: moorhen.ContextValues) {
-    const defaultContext = getDefaultContextValues()
-    let context: moorhen.ContextValues
+  async importPreferences(incomingPreferences: moorhen.PreferencesValues) {
+    const defaultPreferences = MoorhenPreferences.defaultPreferencesValues
+    let preferences: moorhen.PreferencesValues
     
-    if (newContext.version === defaultContext.version) {
-      context = newContext
+    if (incomingPreferences.version === defaultPreferences.version) {
+      preferences = incomingPreferences
     } else {
-      context = defaultContext
+      preferences = defaultPreferences
     }
 
-    await Promise.all(Object.keys(context).map(key => {
+    const moorhenPreferences = new MoorhenPreferences()
+    await Promise.all(Object.keys(preferences).map(key => {
         if (key === 'shortCuts') {
-          return localforage.setItem(key, JSON.stringify(context[key]))
+          return moorhenPreferences.localStorageInstance.setItem(key, JSON.stringify(preferences[key]))
         } else {
-          return localforage.setItem(key, context[key])
+          return moorhenPreferences.localStorageInstance.setItem(key, preferences[key])
         }
     }))
 
-    this.cachedContext = context
+    this.cachedPreferences = preferences
   }
 
   addStyleSheet(uri: string) {
@@ -268,7 +279,7 @@ export default class MoorhenWrapper {
 
   async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
     const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef)
-    newMap.litLines = this.context.defaultMapLitLines
+    newMap.litLines = this.preferences.defaultMapLitLines
     newMap.uniqueId = uniqueId
     
     if (colour) {
@@ -286,8 +297,8 @@ export default class MoorhenWrapper {
     return new Promise(async (resolve, reject) => {
       try {
         await newMap.loadToCootFromMtzURL(inputFile, mapName, selectedColumns)
-        this.controls.changeMaps({ action: 'Add', item: newMap })
-        this.controls.setActiveMap(newMap)
+        this.controls.dispatch( addMap(newMap) )
+        this.controls.dispatch( setActiveMap(newMap) )
         return resolve(newMap)
       
       } catch (err) {
@@ -308,7 +319,7 @@ export default class MoorhenWrapper {
         newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour)
         await newMolecule.loadToCootFromURL(inputFile, molName)
         await newMolecule.fetchIfDirtyAndDraw(newMolecule.atomCount >= 50000 ? 'CRs' : 'CBs')
-        this.controls.changeMolecules({ action: "Add", item: newMolecule })
+        this.controls.dispatch( addMolecule(newMolecule) )
         if (!this.viewSettings) {
           await newMolecule.centreOn()
         }
@@ -335,7 +346,7 @@ export default class MoorhenWrapper {
           newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour)
           this.cachedLigandDictionaries.forEach(ligandDict => ligandDict && newMolecule.addDictShim(ligandDict))
           await newMolecule.fetchIfDirtyAndDraw('CBs')
-          this.controls.changeMolecules({ action: "Add", item: newMolecule })
+          this.controls.dispatch( addMolecule(newMolecule) )
         } else {
           console.log('Error getting monomer... Missing dictionary?')
         }
@@ -500,7 +511,7 @@ export default class MoorhenWrapper {
     root.render(
       <React.StrictMode>
         <div className="App">
-          <MoorhenContextProvider>
+          <MoorhenReduxProvider>
             <MoorhenCloudApp 
               urlPrefix={this.urlPrefix}
               backupStorageInstance={this.backupStorageInstance}
@@ -512,17 +523,17 @@ export default class MoorhenWrapper {
               monomerLibraryPath={this.monomerLibrary}
               viewOnly={this.workMode === 'view'}
               />
-          </MoorhenContextProvider>
+          </MoorhenReduxProvider>
         </div>
       </React.StrictMode>
     );
   }
 
   async start() {
-    if (!this.context) {
-      this.context = getDefaultContextValues()
+    if (!this.preferences) {
+      this.preferences = MoorhenPreferences.defaultPreferencesValues
     }
-    await this.importPreferences(this.context)
+    await this.importPreferences(this.preferences)
 
     this.renderMoorhen()
     await this.waitForInitialisation()
