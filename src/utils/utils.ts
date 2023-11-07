@@ -1,4 +1,33 @@
 
+export const findConsecutiveRanges = (numbers: number[]): [number, number][] => {
+    numbers.sort((a, b) => a - b);
+    const ranges: [number, number][] = [];
+
+    let start = numbers[0];
+    let end = numbers[0];
+
+    for (let i = 1; i < numbers.length; i++) {
+        if (numbers[i] === end + 1) {
+            end = numbers[i];
+        } else {
+            ranges.push([start, end]);
+            start = numbers[i];
+            end = numbers[i];
+        }
+    }
+
+    ranges.push([start, end]);
+    return ranges;
+}
+
+export function convertRemToPx(rem: number): number {
+    return rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
+}
+
+export function convertViewtoPx(input: number, height: number): number {
+    return height * (input / 100)
+}
+
 export function guid(): string {
     let d = Date.now();
     let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
