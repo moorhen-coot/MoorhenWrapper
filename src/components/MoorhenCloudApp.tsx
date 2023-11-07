@@ -18,7 +18,6 @@ export interface MoorhenCloudControlsInterface {
     moleculesRef: React.RefObject<moorhen.Molecule[]>;
     mapsRef: React.RefObject<moorhen.Map[]>;
     activeMapRef: React.RefObject<moorhen.Map>;
-    molecules: moorhen.Molecule[];
     dispatch: Dispatch<AnyAction>;
 }
 
@@ -43,9 +42,6 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
 
     const dispatch = useDispatch()
     const cootInitialized = useSelector((state: moorhen.State) => state.generalStates.cootInitialized)
-    const hoveredAtom = useSelector((state: moorhen.State) => state.hoveringStates.hoveredAtom)
-    const backgroundColor = useSelector((state: moorhen.State) => state.canvasStates.backgroundColor)
-    const molecules = useSelector((state: moorhen.State) => state.molecules)
 
     const exitMenu = {
         icon: <LogoutOutlined/>,
@@ -62,7 +58,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         if (cootInitialized) {
             let collectedControls = {
                 setLegendText, setBusyFetching, setNotifyNewContent, glRef, commandCentre, 
-                timeCapsuleRef, moleculesRef, mapsRef, activeMapRef, molecules, dispatch
+                timeCapsuleRef, moleculesRef, mapsRef, activeMapRef, dispatch
             }
             props.forwardControls(collectedControls)
         }        
@@ -76,8 +72,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
                 extraNavBarMenus={[exitMenu]}
                 />
             {props.viewOnly && 
-            <MoorhenLegendToast backgroundColor={backgroundColor} hoveredAtom={hoveredAtom} busyFetching={busyFetching} notifyNewContent={notifyNewContent} legendText={legendText}/>
-            }
+            <MoorhenLegendToast busyFetching={busyFetching} notifyNewContent={notifyNewContent} legendText={legendText}/>}
         </>
 
 }
