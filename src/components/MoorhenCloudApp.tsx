@@ -47,7 +47,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         icon: <LogoutOutlined/>,
         name: 'Exit',
         ref: exitDialActionRef,
-        JSXElement: <MoorhenExitMenu molecules={molecules as moorhen.Molecule[]} exitCallback={props.exitCallback} glRef={glRef}/>
+        JSXElement: <MoorhenExitMenu exitCallback={props.exitCallback}/>
     }
 
     const collectedProps = {
