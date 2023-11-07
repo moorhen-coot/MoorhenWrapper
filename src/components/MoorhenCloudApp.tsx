@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { MoorhenContainer } from "moorhen"
-import { MoorhenLegendToast } from './MoorhenLegendToast'
-import { MoorhenExitMenu } from "./MoorhenExitMenu"
+import { MoorhenLegendToast } from './misc/MoorhenLegendToast'
+import { MoorhenExitMenu } from "./NavBarMenus/MoorhenExitMenu"
 import { moorhen } from "moorhen/types/moorhen"
 import { webGL } from "moorhen/types/mgWebGL"
 import { LogoutOutlined } from '@mui/icons-material'
