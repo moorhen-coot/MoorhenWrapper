@@ -1,19 +1,18 @@
 import { Form, Toast, ToastContainer } from 'react-bootstrap';
 import { CloudSyncOutlined, NewReleasesOutlined } from '@mui/icons-material';
-import { isDarkBackground } from '../../utils/utils'
 import { moorhen } from "moorhen/types/moorhen"
+import { useSelector } from 'react-redux';
 
 type MoorhenLegendToastPropsType = { 
-    backgroundColor: [number, number, number, number];
     busyFetching: boolean;
     notifyNewContent: boolean;
-    hoveredAtom: moorhen.HoveredAtom;
     legendText: string | JSX.Element;
  }
 
 export const MoorhenLegendToast = (props: MoorhenLegendToastPropsType) => {
 
-    const isDark = isDarkBackground(...props.backgroundColor) 
+    const hoveredAtom = useSelector((state: moorhen.State) => state.hoveringStates.hoveredAtom)
+    const isDark = useSelector((state: moorhen.State) => state.canvasStates.isDark)
 
     return  <ToastContainer style={{ marginTop: "1rem", marginLeft: "0.5rem" }} position='top-start' >
                 <Toast bg='light' onClose={() => {}} autohide={false} show={true}>
@@ -24,8 +23,8 @@ export const MoorhenLegendToast = (props: MoorhenLegendToastPropsType) => {
                         {props.notifyNewContent && 
                             <NewReleasesOutlined style={{marginRight: "0.1rem"}} sx={{color: isDark ? 'white' : 'grey'}}/>                        
                         }
-                        {props.hoveredAtom.cid ? 
-                            <Form.Control style={{ height: '2rem', width: "25rem" }} type="text" readOnly={true} value={`${props.hoveredAtom.molecule.name}:${props.hoveredAtom.cid}`}/>
+                        {hoveredAtom.cid ? 
+                            <Form.Control style={{ height: '2rem', width: "25rem" }} type="text" readOnly={true} value={`${hoveredAtom.molecule.name}:${hoveredAtom.cid}`}/>
                         :
                             <Form.Control style={{ height: '2rem', width: "25rem" }} type="text" readOnly={true} value={" "}/>
                         }
