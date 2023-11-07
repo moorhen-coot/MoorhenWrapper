@@ -1,6 +1,6 @@
 import { Form, Toast, ToastContainer } from 'react-bootstrap';
 import { CloudSyncOutlined, NewReleasesOutlined } from '@mui/icons-material';
-import { isDarkBackground } from '../utils/utils'
+import { isDarkBackground } from '../../utils/utils'
 import { moorhen } from "moorhen/types/moorhen"
 
 type MoorhenLegendToastPropsType = { 
