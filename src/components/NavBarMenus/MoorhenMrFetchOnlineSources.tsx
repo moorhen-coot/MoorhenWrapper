@@ -18,6 +18,7 @@ export const MoorhenMrFetchOnlineSources = (props: {
             glRef={props.glRef}
             downloadMaps={false}
             sources={["PDBe", "AFDB"]}
+            setBusy={(arg0: boolean) => {}}
             monomerLibraryPath={props.monomerLibraryPath}/>
     </div>
 }

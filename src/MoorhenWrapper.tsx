@@ -56,7 +56,7 @@ export default class MoorhenWrapper {
   monomerLibrary: string;
   controls: MoorhenCloudControlsInterface;
   updateInterval: number;
-  workMode: "build" | "view" | "view-update";
+  workMode: "build" | "view" | "view-update" | "mr-prep";
   inputFiles: (PdbInputFileType | MapInputFileType | LegendInputFileType | LigandInputFileType)[]
   rootId: string;
   preferences: moorhen.PreferencesValues;
@@ -521,6 +521,7 @@ export default class MoorhenWrapper {
               exitCallback={this.exit.bind(this)}
               onChangePreferencesListener={this.onChangePreferencesListener.bind(this)}
               monomerLibraryPath={this.monomerLibrary}
+              isMrPreparationMode={this.workMode === 'mr-prep'}
               viewOnly={this.workMode === 'view'}
               />
           </MoorhenReduxProvider>
