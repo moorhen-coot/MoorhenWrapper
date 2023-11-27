@@ -23,7 +23,7 @@ export const MoorhenSliceNDiceModal = (props: {
     const [selectedModel, setSelectedModel] = useState<number | null>(null)
     const [busy, setBusy] = useState<boolean>(false)
 
-    const width = useSelector((state: moorhen.State) => state.canvasStates.width)
+    const width = useSelector((state: moorhen.State) => state.sceneSettings.width)
     const molecules = useSelector((state: moorhen.State) => state.molecules)
 
     const getMinMaxBFactor = (molecule: moorhen.Molecule): [number, number] => {

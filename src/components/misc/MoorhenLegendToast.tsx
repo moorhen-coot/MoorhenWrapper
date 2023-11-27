@@ -12,7 +12,7 @@ type MoorhenLegendToastPropsType = {
 export const MoorhenLegendToast = (props: MoorhenLegendToastPropsType) => {
 
     const hoveredAtom = useSelector((state: moorhen.State) => state.hoveringStates.hoveredAtom)
-    const isDark = useSelector((state: moorhen.State) => state.canvasStates.isDark)
+    const isDark = useSelector((state: moorhen.State) => state.sceneSettings.isDark)
 
     return  <ToastContainer style={{ marginTop: "1rem", marginLeft: "0.5rem" }} position='top-start' >
                 <Toast bg='light' onClose={() => {}} autohide={false} show={true}>

@@ -10,7 +10,7 @@ export const MoorhenMrFetchOnlineSources = (props: {
     monomerLibraryPath: string;
 }) => {
 
-    const height = useSelector((state: moorhen.State) => state.canvasStates.height)
+    const height = useSelector((state: moorhen.State) => state.sceneSettings.height)
 
     return <div style={{maxHeight: convertViewtoPx(65, height), overflowY: 'auto', paddingBottom: '4rem'}}>
         <MoorhenFetchOnlineSourcesForm

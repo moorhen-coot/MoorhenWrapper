@@ -1,5 +1,4 @@
 import { moorhen } from "moorhen/types/moorhen"
-import { guid } from "./utils"
 
 export interface CloudBackupInterface extends moorhen.backupKey {
     serNo: number | string;
@@ -71,24 +70,24 @@ export class CloudStorageInstance implements CloudStorageInstanceInterface {
 
         let backup: CloudBackupInterface
         if (key.type === 'version') {
-            backup = { serNo: 0, data: value as string, ...key }
+            backup = {  ...key, serNo: 0, data: value as string }
         } else if (key.type === 'mtzData') {
             const jsonString = JSON.stringify(Array.from(value as string))
             backup = {
+                ...key,
                 serNo: key.name.replace('./', '').replace('.mtz', '-mtz'),
                 data: jsonString,
-                ...key
             }
         } else if (key.type === 'mapData') {
             const uintArray = new Uint8Array(value as ArrayBuffer)
             const jsonString = JSON.stringify(Array.from(uintArray))
             backup = {
+                ...key,
                 serNo: key.name,
                 data: jsonString,
-                ...key
             }
         } else {
-            backup = { serNo: guid(), data: value as string, ...key }
+            backup = { data: value as string, ...key }
         }
 
         return this.exportBackupCallback(backup) as Promise<string>
@@ -130,9 +129,3 @@ export class CloudStorageInstance implements CloudStorageInstanceInterface {
         return this.removeBackupCallback(key.serNo)
     }
 }
-
-
-
-
-
-
