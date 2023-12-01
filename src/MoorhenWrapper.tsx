@@ -334,7 +334,7 @@ export default class MoorhenWrapper {
   async getMonomerOnStart(url: string, ligandNames: string[]) {
     await Promise.all(
       ligandNames.map(async (ligandName) => {
-        const getMonomerResult = await this.controls.commandCentre.current.cootCommand({
+                const getMonomerResult = await this.controls.commandCentre.current.cootCommand({
           returnType: 'status',
           command: 'get_monomer_and_position_at',
           commandArgs: [ligandName, -999999, 0, 0, 0]
@@ -361,7 +361,7 @@ export default class MoorhenWrapper {
         const fileContents = await response.text()
         await this.controls.commandCentre.current.cootCommand({
           returnType: "status",
-          command: 'shim_read_dictionary',
+          command: 'read_dictionary_string',
           commandArgs: [fileContents, -999999],
           changesMolecules: []
         }, true)
