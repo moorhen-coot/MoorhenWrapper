@@ -101,6 +101,6 @@
   },
   "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
   "dependencies": {
-    "moorhen": "0.6.6"
+    "moorhen": "0.6.7"
   }
 }

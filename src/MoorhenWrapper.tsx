@@ -490,7 +490,7 @@ export default class MoorhenWrapper {
       if (typeof loadedMap === 'undefined') {
         return this.loadMtzData(inputFile.uniqueId, ...inputFile.args).catch((err) => console.log(err))
       } else {
-        return loadedMap.replaceMapWithMtzFile(inputFile.args[0], inputFile.args[1], inputFile.args[2]).catch((err) => console.log(err))
+        return loadedMap.replaceMapWithMtzFile(inputFile.args[0], inputFile.args[2]).catch((err) => console.log(err))
       }
     }))
   }
