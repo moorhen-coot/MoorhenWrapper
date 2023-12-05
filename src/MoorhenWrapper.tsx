@@ -36,7 +36,7 @@ type PdbInputFileType = {
 type MapInputFileType = {
   type: 'mtz';
   uniqueId?: string;
-  args: [string, string, moorhen.selectedMtzColumns, { [type: string]: {r: number, g: number, b: number} }?];
+  args: [string, string, moorhen.selectedMtzColumns, boolean?, { [type: string]: {r: number, g: number, b: number} }?];
 }
 
 type LegendInputFileType = {
@@ -277,7 +277,7 @@ export default class MoorhenWrapper {
     }
   }
 
-  async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
+  async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, isVisible: boolean = true, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
     const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef)
     newMap.litLines = this.preferences.defaultMapLitLines
     newMap.uniqueId = uniqueId
@@ -297,6 +297,7 @@ export default class MoorhenWrapper {
     return new Promise(async (resolve, reject) => {
       try {
         await newMap.loadToCootFromMtzURL(inputFile, mapName, selectedColumns)
+        newMap.isVisible = isVisible
         this.controls.dispatch( addMap(newMap) )
         this.controls.dispatch( setActiveMap(newMap) )
         return resolve(newMap)
@@ -489,7 +490,7 @@ export default class MoorhenWrapper {
       if (typeof loadedMap === 'undefined') {
         return this.loadMtzData(inputFile.uniqueId, ...inputFile.args).catch((err) => console.log(err))
       } else {
-        return loadedMap.replaceMapWithMtzFile(...inputFile.args).catch((err) => console.log(err))
+        return loadedMap.replaceMapWithMtzFile(inputFile.args[0], inputFile.args[1], inputFile.args[2]).catch((err) => console.log(err))
       }
     }))
   }
