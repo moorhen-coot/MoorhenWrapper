@@ -64,7 +64,7 @@ export default class MoorhenWrapper {
   cachedLegend: string;
   cachedLigandDictionaries: string[];
   noDataLegendMessage: JSX.Element;
-  exitCallback: (viewSettings: moorhen.viewDataSession, molData?: { molName: string; pdbData: string; }[]) => Promise<void>;
+  exitCallback: (viewSettings: moorhen.viewDataSession, molData: { molName: string; pdbData: string; mmcifData: string }[]) => Promise<void>;
   exportPreferencesCallback: (arg0: moorhen.PreferencesValues) => void;
   backupStorageInstance: CloudStorageInstanceInterface;
   aceDRGInstance: moorhen.AceDRGInstance;
@@ -273,7 +273,7 @@ export default class MoorhenWrapper {
       this.controls.glRef.current.doDrawClickedAtomLines = this.viewSettings.doDrawClickedAtomLines
       this.controls.glRef.current.background_colour = this.viewSettings.backgroundColor
       this.controls.glRef.current.setQuat(this.viewSettings.quat4)
-      this.controls.glRef.current.setOriginAnimated(this.viewSettings.origin, true)
+      this.controls.glRef.current.setOriginAnimated(this.viewSettings.origin)
     }
   }
 
@@ -469,7 +469,7 @@ export default class MoorhenWrapper {
         return this.loadPdbData(inputFile.uniqueId, ...inputFile.args).catch((err) => console.log(err))
       } else {
         const oldUnitCellParams = JSON.stringify(loadedMolecule.getUnitCellParams())
-        return loadedMolecule.replaceModelWithFile(...inputFile.args)
+        return loadedMolecule.replaceModelWithFile(inputFile.args[0])
           .then(_ => {
             const newUnitCellParams = JSON.stringify(loadedMolecule.getUnitCellParams())
             if (oldUnitCellParams !== newUnitCellParams) {
@@ -558,10 +558,15 @@ export default class MoorhenWrapper {
   async exit() {
     const modifiedMolecules = this.controls.commandCentre.current.history.getModifiedMolNo()
     const selectedMolecules = this.controls.moleculesRef.current.filter(molecule => !molecule.isLigand && modifiedMolecules.includes(molecule.molNo))
-    const moleculeAtoms = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms()))
+    const pdbCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("pdb")))
+    const mmcifCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("mmcif")))
 
     const molData = selectedMolecules.map((molecule, index) => {
-        return {molName: molecule.name, pdbData: moleculeAtoms[index]}
+        return {
+          molName: molecule.name,
+          pdbData: pdbCoordData[index],
+          mmcifData: mmcifCoordData[index]
+        }
     })
 
     const viewData: moorhen.viewDataSession = {
