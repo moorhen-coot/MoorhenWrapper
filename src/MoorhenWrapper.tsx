@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { MoorhenCloudApp, MoorhenCloudControlsInterface } from './components/MoorhenCloudApp';
 import { CloudBackupInterface, CloudStorageInstance, CloudStorageInstanceInterface } from "./utils/MoorhenCloudTimeCapsule"
-import { MoorhenMap, MoorhenMolecule, MoorhenReduxProvider, MoorhenPreferences, addMap, setActiveMap, addMolecule } from "moorhen"
+import { MoorhenMap, MoorhenMolecule, MoorhenReduxProvider, MoorhenPreferences, addMap, setActiveMap, addMolecule, setMapColours, setNegativeMapColours, setPositiveMapColours } from "moorhen"
 import { guid } from "./utils/utils"
 import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import reportWebVitals from './reportWebVitals'
@@ -279,25 +279,23 @@ export default class MoorhenWrapper {
 
   async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, isVisible: boolean = true, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
     const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef)
-    newMap.litLines = this.preferences.defaultMapLitLines
     newMap.uniqueId = uniqueId
-    
-    if (colour) {
-      if (colour.mapColour) {
-        newMap.rgba.mapColour = colour.mapColour
-      }
-      if (colour.negativeDiffColour) {
-        newMap.rgba.negativeDiffColour = colour.negativeDiffColour
-      }
-      if (colour.positiveDiffColour) {
-        newMap.rgba.positiveDiffColour = colour.positiveDiffColour
-      }
-    }
     
     return new Promise(async (resolve, reject) => {
       try {
         await newMap.loadToCootFromMtzURL(inputFile, mapName, selectedColumns)
-        newMap.isVisible = isVisible
+        newMap.showOnLoad = isVisible
+        if (colour) {
+          if (colour.mapColour) {
+            this.controls.dispatch( setMapColours({molNo: newMap.molNo, rgb: colour.mapColour}) )
+          }
+          if (colour.negativeDiffColour) {
+            this.controls.dispatch( setNegativeMapColours({molNo: newMap.molNo, rgb: colour.negativeDiffColour}) )
+          }
+          if (colour.positiveDiffColour) {
+            this.controls.dispatch( setPositiveMapColours({molNo: newMap.molNo, rgb: colour.positiveDiffColour}) )
+          }
+        }    
         this.controls.dispatch( addMap(newMap) )
         this.controls.dispatch( setActiveMap(newMap) )
         return resolve(newMap)
