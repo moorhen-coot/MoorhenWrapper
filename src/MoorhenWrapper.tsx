@@ -554,7 +554,13 @@ export default class MoorhenWrapper {
   }
 
   async exit() {
-    const modifiedMolecules = this.controls.commandCentre.current.history.getModifiedMolNo()
+    let modifiedMolecules: number[]
+    // If the head is detached then any molecule may have been modified so lets store all of them...
+    if (this.controls.commandCentre.current.history.headIsDetached) {
+      modifiedMolecules = this.controls.moleculesRef.current.map(molecule => molecule.molNo)
+    } else {
+      modifiedMolecules = this.controls.commandCentre.current.history.getModifiedMolNo()
+    }
     const selectedMolecules = this.controls.moleculesRef.current.filter(molecule => !molecule.isLigand && modifiedMolecules.includes(molecule.molNo))
     const pdbCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("pdb")))
     const mmcifCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("mmcif")))
