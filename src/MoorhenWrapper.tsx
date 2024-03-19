@@ -110,7 +110,26 @@ export default class MoorhenWrapper {
       doDrawClickedAtomLines: this.controls.glRef.current.doDrawClickedAtomLines,
       clipStart: (this.controls.glRef.current.gl_clipPlane0[3] + this.controls.glRef.current.fogClipOffset) * -1,
       clipEnd: this.controls.glRef.current.gl_clipPlane1[3] - this.controls.glRef.current.fogClipOffset,
-      quat4: this.controls.glRef.current.myQuat
+      specularPower: this.controls.glRef.current.specularPower,
+      quat4: this.controls.glRef.current.myQuat,
+      edgeDetection: {
+          enabled: this.controls.glRef.current.doEdgeDetect,
+          depthScale: this.controls.glRef.current.scaleDepth,
+          depthThreshold: this.controls.glRef.current.depthThreshold,
+          normalScale: this.controls.glRef.current.scaleNormal,
+          normalThreshold: this.controls.glRef.current.normalThreshold
+      },
+      shadows: this.controls.glRef.current.doShadow,
+      ssao: {
+          enabled: this.controls.glRef.current.doSSAO,
+          radius: this.controls.glRef.current.ssaoRadius,
+          bias: this.controls.glRef.current.ssaoBias
+      },
+      blur: {
+          enabled: this.controls.glRef.current.useOffScreenBuffers,
+          radius: this.controls.glRef.current.blurSize,
+          depth: this.controls.glRef.current.blurDepth
+      }
     }
     return viewData
   }
@@ -573,21 +592,7 @@ export default class MoorhenWrapper {
         }
     })
 
-    const viewData: moorhen.viewDataSession = {
-        origin: this.controls.glRef.current.origin,
-        backgroundColor: this.controls.glRef.current.background_colour,
-        ambientLight: this.controls.glRef.current.light_colours_ambient,
-        diffuseLight: this.controls.glRef.current.light_colours_diffuse,
-        lightPosition: this.controls.glRef.current.light_positions,
-        specularLight: this.controls.glRef.current.light_colours_specular,
-        fogStart: this.controls.glRef.current.gl_fog_start,
-        fogEnd: this.controls.glRef.current.gl_fog_end,
-        zoom: this.controls.glRef.current.zoom,
-        doDrawClickedAtomLines: this.controls.glRef.current.doDrawClickedAtomLines,
-        clipStart: (this.controls.glRef.current.gl_clipPlane0[3] + this.controls.glRef.current.fogClipOffset) * -1,
-        clipEnd: this.controls.glRef.current.gl_clipPlane1[3] - this.controls.glRef.current.fogClipOffset,
-        quat4: this.controls.glRef.current.myQuat
-    }
+    const viewData = this.getViewSettings()
   
     this.exitCallback(viewData, molData)
   }
