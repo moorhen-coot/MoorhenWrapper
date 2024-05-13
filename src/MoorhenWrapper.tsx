@@ -2,13 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { MoorhenCloudApp, MoorhenCloudControlsInterface } from './components/MoorhenCloudApp';
 import { CloudBackupInterface, CloudStorageInstance, CloudStorageInstanceInterface } from "./utils/MoorhenCloudTimeCapsule"
-import { MoorhenMap, MoorhenMolecule, MoorhenReduxProvider, MoorhenPreferences, addMap, setActiveMap, addMolecule, setMapColours, setNegativeMapColours, setPositiveMapColours } from "moorhen"
+import { MoorhenMap, MoorhenMolecule, MoorhenPreferences, addMap, setActiveMap, addMolecule, setMapColours, setNegativeMapColours, setPositiveMapColours, MoorhenReduxStore } from "moorhen"
 import { guid } from "./utils/utils"
 import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import reportWebVitals from './reportWebVitals'
 import parse from 'html-react-parser';
 import { moorhen } from "moorhen/types/moorhen";
 import { libcootApi } from "moorhen/types/libcoot";
+import { Provider } from 'react-redux';
 
 declare var createCCP4Module: (arg0: any) => Promise<libcootApi.CCP4ModuleType>;
 
@@ -297,7 +298,7 @@ export default class MoorhenWrapper {
   }
 
   async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, isVisible: boolean = true, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
-    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef)
+    const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef, MoorhenReduxStore)
     newMap.uniqueId = uniqueId
     
     return new Promise(async (resolve, reject) => {
@@ -328,12 +329,12 @@ export default class MoorhenWrapper {
   }
 
   async loadPdbData(uniqueId: string, inputFile: string, molName: string): Promise<moorhen.Molecule> {
-    const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary) as moorhen.Molecule
+    const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, MoorhenReduxStore, this.monomerLibrary) as moorhen.Molecule
 
     return new Promise(async (resolve, reject) => {
       try {
         newMolecule.uniqueId = uniqueId
-        this.cachedLigandDictionaries.forEach(ligandDict => ligandDict && newMolecule.addDictShim(ligandDict))
+        this.cachedLigandDictionaries.forEach(ligandDict => ligandDict && newMolecule.cacheLigandDict(ligandDict))
         newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour)
         await newMolecule.loadToCootFromURL(inputFile, molName)
         await newMolecule.fetchIfDirtyAndDraw(newMolecule.atomCount >= 50000 ? 'CRs' : 'CBs')
@@ -358,11 +359,11 @@ export default class MoorhenWrapper {
           commandArgs: [ligandName, -999999, 0, 0, 0]
         }, true)
         if (getMonomerResult.data.result.status === "Completed" && getMonomerResult.data.result.result !== -1) {
-          const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, this.monomerLibrary) as unknown as moorhen.Molecule
+          const newMolecule = new MoorhenMolecule(this.controls.commandCentre, this.controls.glRef, MoorhenReduxStore, this.monomerLibrary) as unknown as moorhen.Molecule
           newMolecule.molNo = getMonomerResult.data.result.result
           newMolecule.name = ligandName
           newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour)
-          this.cachedLigandDictionaries.forEach(ligandDict => ligandDict && newMolecule.addDictShim(ligandDict))
+          this.cachedLigandDictionaries.forEach(ligandDict => ligandDict && newMolecule.cacheLigandDict(ligandDict))
           await newMolecule.fetchIfDirtyAndDraw('CBs')
           this.controls.dispatch( addMolecule(newMolecule) )
         } else {
@@ -529,7 +530,7 @@ export default class MoorhenWrapper {
     root.render(
       <React.StrictMode>
         <div className="App">
-          <MoorhenReduxProvider>
+          <Provider store={MoorhenReduxStore}>
             <MoorhenCloudApp 
               urlPrefix={this.urlPrefix}
               backupStorageInstance={this.backupStorageInstance}
@@ -542,7 +543,7 @@ export default class MoorhenWrapper {
               isMrPreparationMode={this.workMode === 'mr-prep'}
               viewOnly={this.workMode === 'view'}
               />
-          </MoorhenReduxProvider>
+          </Provider>
         </div>
       </React.StrictMode>
     );

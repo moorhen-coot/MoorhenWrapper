@@ -103,7 +103,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         icon: <LogoutOutlined/>,
         name: 'Exit',
         ref: exitDialActionRef,
-        JSXElement: <MoorhenExitMenu exitCallback={props.exitCallback}/>
+        JSXElement: <MoorhenExitMenu key={"exit"} exitCallback={props.exitCallback}/>
     })
 
     const collectedProps = {
