@@ -113,6 +113,7 @@ export default class MoorhenWrapper {
       clipEnd: this.controls.glRef.current.gl_clipPlane1[3] - this.controls.glRef.current.fogClipOffset,
       specularPower: this.controls.glRef.current.specularPower,
       quat4: this.controls.glRef.current.myQuat,
+      doPerspectiveProjection: this.controls.glRef.current.doPerspectiveProjection,
       edgeDetection: {
           enabled: this.controls.glRef.current.doEdgeDetect,
           depthScale: this.controls.glRef.current.scaleDepth,
@@ -581,7 +582,7 @@ export default class MoorhenWrapper {
     } else {
       modifiedMolecules = this.controls.commandCentre.current.history.getModifiedMolNo()
     }
-    const selectedMolecules = this.controls.moleculesRef.current.filter(molecule => !molecule.isLigand && modifiedMolecules.includes(molecule.molNo))
+    const selectedMolecules = this.controls.moleculesRef.current.filter(molecule => !molecule.isLigand && (molecule.isMRSearchModel || modifiedMolecules.includes(molecule.molNo)))
     const pdbCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("pdb")))
     const mmcifCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("mmcif")))
 
@@ -589,7 +590,8 @@ export default class MoorhenWrapper {
         return {
           molName: molecule.name,
           pdbData: pdbCoordData[index],
-          mmcifData: mmcifCoordData[index]
+          mmcifData: mmcifCoordData[index],
+          isMRSearchModel: molecule.isMRSearchModel
         }
     })
 
