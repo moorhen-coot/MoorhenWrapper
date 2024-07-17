@@ -55,7 +55,7 @@ type LigandInputFileType = {
 type PAEInputFileType = {
   type: 'PAE';
   uniqueId?: string;
-  args: [string]
+  args: [string, string]
 }
 
 export default class MoorhenWrapper {
@@ -80,7 +80,7 @@ export default class MoorhenWrapper {
   backupStorageInstance: CloudStorageInstanceInterface;
   aceDRGInstance: moorhen.AceDRGInstance;
   viewSettings: moorhen.viewDataSession;
-  paeData: string;
+  paeData: {[fileName: string]: string};
 
   constructor(urlPrefix: string) {
     this.urlPrefix = urlPrefix
@@ -100,7 +100,7 @@ export default class MoorhenWrapper {
     this.backupStorageInstance = new CloudStorageInstance()
     this.aceDRGInstance = new MoorhenAceDRGInstance()
     this.viewSettings = null
-    this.paeData = null
+    this.paeData = {}
     reportWebVitals()
     createModule()
   }
@@ -426,8 +426,14 @@ export default class MoorhenWrapper {
     }
   }
 
-  async loadPAE(fileContents: string) {
-    this.paeData = fileContents
+  async loadPAE(url: string, fileName: string) {
+    const response = await fetch(url)
+    if (response.ok) {
+      const fileContents = await response.text()
+      this.paeData[fileName] = fileContents
+    } else {
+      console.log(`Unable to fetch PAE file ${url}`)
+    }
   }
 
   async loadInputFiles(): Promise<void>{
