@@ -65,7 +65,11 @@ export default class MoorhenWrapper {
   cachedLegend: string;
   cachedLigandDictionaries: string[];
   noDataLegendMessage: JSX.Element;
-  exitCallback: (viewSettings: moorhen.viewDataSession, molData: { molName: string; pdbData: string; mmcifData: string }[]) => Promise<void>;
+  exitCallback: (arg0: {
+    viewData: moorhen.viewDataSession;
+    molData: { molName: string; pdbData: string; mmcifData: string }[];
+    ligData: string[]
+  }) => Promise<void>;
   exportPreferencesCallback: (arg0: moorhen.PreferencesValues) => void;
   backupStorageInstance: CloudStorageInstanceInterface;
   aceDRGInstance: moorhen.AceDRGInstance;
@@ -195,7 +199,7 @@ export default class MoorhenWrapper {
     this.monomerLibrary = uri
   }
 
-  addOnExitListener(callbackFunction: (viewSettings: moorhen.viewDataSession, molData?: { molName: string; pdbData: string; }[]) => Promise<void>){
+  addOnExitListener(callbackFunction: (arg0: { viewData: moorhen.viewDataSession; molData: { molName: string; pdbData: string; mmcifData: string }[]; ligData: string[]; }) => Promise<void>) {
     this.exitCallback = callbackFunction
   }
 
@@ -541,7 +545,6 @@ export default class MoorhenWrapper {
               exitCallback={this.exit.bind(this)}
               onChangePreferencesListener={this.onChangePreferencesListener.bind(this)}
               monomerLibraryPath={this.monomerLibrary}
-              isMrPreparationMode={this.workMode === 'mr-prep'}
               viewOnly={this.workMode === 'view'}
               />
           </Provider>
@@ -574,7 +577,7 @@ export default class MoorhenWrapper {
 
   }
 
-  async exit() {
+  async getMoleculeData() {
     let modifiedMolecules: number[]
     // If the head is detached then any molecule may have been modified so lets store all of them...
     if (this.controls.commandCentre.current.history.headIsDetached) {
@@ -586,7 +589,7 @@ export default class MoorhenWrapper {
     const pdbCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("pdb")))
     const mmcifCoordData = await Promise.all(selectedMolecules.map(molecule => molecule.getAtoms("mmcif")))
 
-    const molData = selectedMolecules.map((molecule, index) => {
+    return selectedMolecules.map((molecule, index) => {
         return {
           molName: molecule.name,
           pdbData: pdbCoordData[index],
@@ -594,11 +597,28 @@ export default class MoorhenWrapper {
           isMRSearchModel: molecule.isMRSearchModel
         }
     })
-
-    const viewData = this.getViewSettings()
-  
-    this.exitCallback(viewData, molData)
   }
 
+  getLigData() {
+    const ligandData: {[compId: string]: string} = {}
+    this.controls.moleculesRef.current.forEach(molecule => {
+      Object.keys(molecule.ligandDicts).forEach(compId => {
+        if (!Object.keys(ligandData).includes(compId)) {
+          ligandData[compId] = molecule.ligandDicts[compId]
+        }
+      })
+    })
+    return Object.values(ligandData)
+  }
+
+  async exit() {
+    const molData = await this.getMoleculeData()
+    const ligData = this.getLigData()
+    const viewData = this.getViewSettings()
+    this.exitCallback({
+      viewData, molData, ligData
+    })
+  }
 }
+
 
