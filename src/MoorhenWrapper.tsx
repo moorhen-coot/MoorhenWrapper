@@ -52,13 +52,19 @@ type LigandInputFileType = {
   args: [string, string[]];
 }
 
+type PAEInputFileType = {
+  type: 'PAE';
+  uniqueId?: string;
+  args: [string]
+}
+
 export default class MoorhenWrapper {
   urlPrefix: string;
   monomerLibrary: string;
   controls: MoorhenCloudControlsInterface;
   updateInterval: number;
-  workMode: "build" | "view" | "view-update" | "mr-prep";
-  inputFiles: (PdbInputFileType | MapInputFileType | LegendInputFileType | LigandInputFileType)[]
+  workMode: "build" | "view" | "view-update";
+  inputFiles: (PdbInputFileType | MapInputFileType | LegendInputFileType | LigandInputFileType | PAEInputFileType)[]
   rootId: string;
   preferences: moorhen.PreferencesValues;
   cachedPreferences: moorhen.PreferencesValues;
@@ -74,6 +80,7 @@ export default class MoorhenWrapper {
   backupStorageInstance: CloudStorageInstanceInterface;
   aceDRGInstance: moorhen.AceDRGInstance;
   viewSettings: moorhen.viewDataSession;
+  paeData: string;
 
   constructor(urlPrefix: string) {
     this.urlPrefix = urlPrefix
@@ -93,6 +100,7 @@ export default class MoorhenWrapper {
     this.backupStorageInstance = new CloudStorageInstance()
     this.aceDRGInstance = new MoorhenAceDRGInstance()
     this.viewSettings = null
+    this.paeData = null
     reportWebVitals()
     createModule()
   }
@@ -418,6 +426,10 @@ export default class MoorhenWrapper {
     }
   }
 
+  async loadPAE(fileContents: string) {
+    this.paeData = fileContents
+  }
+
   async loadInputFiles(): Promise<void>{
 
     this.cachedLigandDictionaries = await Promise.all(
@@ -435,6 +447,8 @@ export default class MoorhenWrapper {
             return this.loadLegend(...file.args)
           } else if (file.type === 'ligand') {
             return this.getMonomerOnStart(...file.args)
+          } else if (file.type === 'PAE') {
+            return this.loadPAE(...file.args)
           } else {
             console.log('Unrecognised file type')
             console.log(file)
