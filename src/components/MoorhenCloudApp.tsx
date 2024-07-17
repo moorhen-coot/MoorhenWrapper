@@ -25,7 +25,6 @@ interface MoorhenCloudAppPropsInterface extends moorhen.ContainerProps {
     exitCallback: () => Promise<void>;
     onChangePreferencesListener: (key: string, value: any) => void;
     forwardControls: (controls: MoorhenCloudControlsInterface) => void;
-    isMrPreparationMode?: boolean;
 }
 
 export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
@@ -48,57 +47,6 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     let extraNavBarMenus = []
     let extraNavBarModals = []
     
-    /**
-    const seqSearchDialActionRef = useRef(null)
-    const fetchDialActionRef = useRef(null)
-    const showSliceNDiceDialActionRef = useRef(null)
-
-    const [showMrQuerySequenceModal, setShowMrQuerySequenceModal] = useState<boolean>(false)
-    const [showSliceNDiceModal, setShowSliceNDiceModal] = useState<boolean>(false)
-
-    if (props.isMrPreparationMode) {
-        includeNavBarMenuNames = ["Fetch coords", "Seq. search", "Slice-n-Dice", "Models", "View", "Preferences", "Help", "Exit"]
-        extraNavBarMenus.push({
-            icon: <CloudDownloadOutlined/>,
-            name: 'Fetch coords',
-            ref: fetchDialActionRef,
-            JSXElement: <MoorhenMrFetchOnlineSources
-                            commandCentre={commandCentre}
-                            glRef={glRef}
-                            monomerLibraryPath={props.monomerLibraryPath}
-                        />
-        })
-        extraNavBarModals.push(
-            {
-                icon: <ManageSearchOutlined/>,
-                name: 'Seq. search',
-                ref: seqSearchDialActionRef,
-                show: showMrQuerySequenceModal,
-                setShow: setShowMrQuerySequenceModal,
-                JSXElement: <MoorhenQuerySequenceModal
-                                key={'mr-seq-search'}
-                                show={showMrQuerySequenceModal}
-                                setShow={setShowMrQuerySequenceModal}
-                                commandCentre={commandCentre}
-                                glRef={glRef}
-                                monomerLibraryPath={props.monomerLibraryPath}
-                            />    
-            }, 
-            {
-                icon: <ContentCutOutlined/>,
-                name: 'Slice-n-Dice',
-                ref: showSliceNDiceDialActionRef,
-                show: showSliceNDiceModal,
-                setShow: setShowSliceNDiceModal,
-                JSXElement: <MoorhenSliceNDiceModal
-                                key={'slice-n-dice-modal'}
-                                show={showSliceNDiceModal}
-                                setShow={setShowSliceNDiceModal}
-                            />    
-            }, 
-        )
-    }
-    */    
     extraNavBarMenus.push({
         icon: <LogoutOutlined/>,
         name: 'Exit',
@@ -134,5 +82,3 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         </>
 
 }
-
-MoorhenCloudApp.defaultProps = {  isMrPreparationMode: false }
