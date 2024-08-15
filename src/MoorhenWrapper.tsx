@@ -8,39 +8,7 @@ import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import reportWebVitals from './reportWebVitals'
 import parse from 'html-react-parser';
 import { moorhen } from "moorhen/types/moorhen";
-import { libcootApi } from "moorhen/types/libcoot";
 import { Provider } from 'react-redux';
-
-declare var createCCP4Module: (arg0: any) => Promise<libcootApi.CCP4ModuleType>;
-declare var createRSRModule: (arg0: any) => Promise<libcootApi.CCP4ModuleType>;
-
-const createModule = (urlPrefix: string) => {
-  createCCP4Module({
-    print(t) { console.log(["output", t]) },
-    printErr(t) { console.error(["output", t]); }
-  })
-  .then(function (CCP4Mod) {
-    // @ts-ignore
-    window.CCP4Module = CCP4Mod;
-  })
-  .catch((e) => {
-    console.log("CCP4 problem :(");
-    console.log(e);
-  });
-  createRSRModule({
-    print(t) { console.log(["output", t]) },
-    printErr(t) { console.error(["output", t]); }
-  })
-  .then((returnedModule) => {
-      // @ts-ignore
-      window.cootModule = returnedModule
-      const cootModuleAttachedEvent = new CustomEvent("cootModuleAttached", { })
-      document.dispatchEvent(cootModuleAttachedEvent)
-  })
-  .catch((e) => {
-      console.log(e);
-  });
-}
 
 type PdbInputFileType = {
   type: 'pdb';
@@ -116,7 +84,6 @@ export default class MoorhenWrapper {
     this.viewSettings = null
     this.paeData = {}
     reportWebVitals()
-    createModule(urlPrefix)
   }
 
   setViewSettings(newSettings: moorhen.viewDataSession) {
