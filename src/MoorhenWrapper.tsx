@@ -649,10 +649,6 @@ export default class MoorhenWrapper {
     const molData = await this.getMoleculeData()
     const ligData = this.getLigData()
     const viewData = this.getViewSettings()
-    console.log(">>>EXIT!!!")
-    console.log({
-      viewData, molData, ligData
-    })
   }
 }
 
