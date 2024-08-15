@@ -7,7 +7,7 @@ const path = require('path');
 const paths = {
   src: path.resolve(__dirname, 'src'),
   dist: path.resolve(__dirname, 'dist'),
-  publicBabyGru: path.resolve(__dirname, 'node_modules', 'moorhen', 'baby-gru')
+  publicBabyGru: path.resolve(__dirname, 'node_modules', 'moorhen', 'public')
 }
 
 module.exports = (env, argv) => {
