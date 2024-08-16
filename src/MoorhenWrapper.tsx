@@ -19,7 +19,7 @@ type PdbInputFileType = {
 type MapInputFileType = {
   type: 'mtz';
   uniqueId?: string;
-  args: [string, string, moorhen.selectedMtzColumns, boolean?, { [type: string]: {r: number, g: number, b: number} }?];
+  args: [string, string, moorhen.selectedMtzColumns, boolean?, boolean?, { [type: string]: {r: number, g: number, b: number} }?];
 }
 
 type LegendInputFileType = {
@@ -291,7 +291,7 @@ export default class MoorhenWrapper {
     }
   }
 
-  async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, isVisible: boolean = true, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
+  async loadMtzData(uniqueId: string, inputFile: string, mapName: string, selectedColumns: moorhen.selectedMtzColumns, isVisible: boolean = true, isActiveMap: boolean = false, colour?: {[type: string]: {r: number, g: number, b: number}}): Promise<moorhen.Map> {
     const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.glRef, MoorhenReduxStore)
     newMap.uniqueId = uniqueId
     
@@ -311,7 +311,9 @@ export default class MoorhenWrapper {
           }
         }    
         this.controls.dispatch( addMap(newMap) )
-        this.controls.dispatch( setActiveMap(newMap) )
+        if (isActiveMap) {
+          this.controls.dispatch( setActiveMap(newMap) )
+        }
         return resolve(newMap)
       
       } catch (err) {
@@ -441,7 +443,14 @@ export default class MoorhenWrapper {
             console.log(file)
             return Promise.resolve()
           }
-      }))  
+      }))
+      if (this.controls.activeMapRef.current === null && this.inputFiles.some(file => file.type === "mtz")) {
+        const activeMapId = this.inputFiles.find(file => file.type === "mtz")?.uniqueId
+        const activeMap = this.controls.mapsRef.current.find(map => map.uniqueId === activeMapId)
+        if (activeMap) {
+          this.controls.dispatch( setActiveMap(activeMap) )
+        }
+      }
     } catch (err) {
       console.log('Error fetching files...')
       console.log(err)
