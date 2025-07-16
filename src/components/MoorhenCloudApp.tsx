@@ -1,3 +1,4 @@
+import React from 'react';
 import { useRef, useState, useEffect } from 'react'
 import { MoorhenContainer } from "moorhen"
 import { MoorhenLegendToast } from './misc/MoorhenLegendToast'
@@ -10,7 +11,7 @@ import { AnyAction, Dispatch } from "@reduxjs/toolkit";
 
 export interface MoorhenCloudControlsInterface {
     setNotifyNewContent: React.Dispatch<React.SetStateAction<boolean>>;
-    setLegendText: React.Dispatch<React.SetStateAction<JSX.Element>>;
+    setLegendText: React.Dispatch<React.SetStateAction<React.JSX.Element>>;
     setBusyFetching: React.Dispatch<React.SetStateAction<boolean>>;
     glRef: React.RefObject<webGL.MGWebGL>;
     commandCentre: React.RefObject<moorhen.CommandCentre>;
@@ -36,7 +37,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     const activeMapRef = useRef<moorhen.Map | null>(null)
     const exitDialActionRef = useRef(null)
     
-    const [legendText, setLegendText] = useState<string | JSX.Element>('Loading, please wait...')
+    const [legendText, setLegendText] = useState<string | React.JSX.Element>('Loading, please wait...')
     const [busyFetching, setBusyFetching] = useState<boolean>(false)
     const [notifyNewContent, setNotifyNewContent] = useState<boolean>(false)
 

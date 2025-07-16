@@ -1,3 +1,4 @@
+import React from 'react';
 import { Form, Toast, ToastContainer } from 'react-bootstrap';
 import { CloudSyncOutlined, NewReleasesOutlined } from '@mui/icons-material';
 import { moorhen } from "moorhen/types/moorhen"
@@ -6,7 +7,7 @@ import { useSelector } from 'react-redux';
 type MoorhenLegendToastPropsType = { 
     busyFetching: boolean;
     notifyNewContent: boolean;
-    legendText: string | JSX.Element;
+    legendText: string | React.JSX.Element;
  }
 
 export const MoorhenLegendToast = (props: MoorhenLegendToastPropsType) => {

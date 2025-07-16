@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { MoorhenCloudApp, MoorhenCloudControlsInterface } from './components/MoorhenCloudApp';
 import { CloudBackupInterface, CloudStorageInstance, CloudStorageInstanceInterface } from "./utils/MoorhenCloudTimeCapsule"
-import { MoorhenMap, MoorhenMolecule, MoorhenPreferences, addMap, setActiveMap, addMolecule, setMapColours, setNegativeMapColours, setPositiveMapColours, MoorhenReduxStore } from "moorhen"
+import { MoorhenMap, MoorhenMolecule, MoorhenPreferences, addMap, setActiveMap, addMolecule, setMapColours, setNegativeMapColours, setPositiveMapColours, MoorhenReduxStore, setOrigin, setZoom, setQuat, setRequestDrawScene, setLightPosition, setAmbient, setSpecular, setDiffuse, setSpecularPower, setFogClipOffset, setFogStart, setFogEnd, setClipStart, setClipEnd, setBackgroundColor } from "moorhen"
 import { guid } from "./utils/utils"
 import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import reportWebVitals from './reportWebVitals'
@@ -52,7 +52,7 @@ export default class MoorhenWrapper {
   cachedPreferences: moorhen.PreferencesValues;
   cachedLegend: string;
   cachedLigandDictionaries: string[];
-  noDataLegendMessage: JSX.Element;
+  noDataLegendMessage: React.JSX.Element;
   exitCallback: (arg0: {
     viewData: moorhen.viewDataSession;
     molData: { molName: string; pdbData: string; mmcifData: string }[];
@@ -76,7 +76,7 @@ export default class MoorhenWrapper {
     this.cachedPreferences = null
     this.cachedLegend = null
     this.cachedLigandDictionaries = []
-    this.noDataLegendMessage = parse('<div></div>') as JSX.Element
+    this.noDataLegendMessage = parse('<div></div>') as React.JSX.Element
     this.exitCallback = async () => {}
     this.exportPreferencesCallback = () => {}
     this.backupStorageInstance = new CloudStorageInstance()
@@ -91,39 +91,41 @@ export default class MoorhenWrapper {
   }
 
   getViewSettings() {
+
+    const store = MoorhenReduxStore
     const viewData: moorhen.viewDataSession = {
-      origin: this.controls.glRef.current.origin,
-      backgroundColor: this.controls.glRef.current.background_colour,
-      ambientLight: this.controls.glRef.current.light_colours_ambient,
-      diffuseLight: this.controls.glRef.current.light_colours_diffuse,
-      lightPosition: this.controls.glRef.current.light_positions,
-      specularLight: this.controls.glRef.current.light_colours_specular,
-      fogStart: this.controls.glRef.current.gl_fog_start,
-      fogEnd: this.controls.glRef.current.gl_fog_end,
-      zoom: this.controls.glRef.current.zoom,
-      doDrawClickedAtomLines: this.controls.glRef.current.doDrawClickedAtomLines,
-      clipStart: (this.controls.glRef.current.gl_clipPlane0[3] + this.controls.glRef.current.fogClipOffset) * -1,
-      clipEnd: this.controls.glRef.current.gl_clipPlane1[3] - this.controls.glRef.current.fogClipOffset,
-      specularPower: this.controls.glRef.current.specularPower,
-      quat4: this.controls.glRef.current.myQuat,
-      doPerspectiveProjection: this.controls.glRef.current.doPerspectiveProjection,
+      origin: store.getState().glRef.origin,
+      backgroundColor: store.getState().sceneSettings.backgroundColor,
+      ambientLight: store.getState().glRef.ambient,
+      diffuseLight: store.getState().glRef.diffuse,
+      lightPosition: store.getState().glRef.lightPosition,
+      specularLight: store.getState().glRef.specular,
+      fogStart: store.getState().glRef.fogStart,
+      fogEnd: store.getState().glRef.fogEnd,
+      zoom: store.getState().glRef.zoom,
+      doDrawClickedAtomLines: false,
+      clipStart: store.getState().glRef.clipStart * -1,
+      clipEnd: store.getState().glRef.clipEnd,
+      specularPower: store.getState().glRef.specularPower,
+      quat4: store.getState().glRef.quat,
+      doPerspectiveProjection: store.getState().sceneSettings.doPerspectiveProjection,
       edgeDetection: {
-          enabled: this.controls.glRef.current.doEdgeDetect,
-          depthScale: this.controls.glRef.current.scaleDepth,
-          depthThreshold: this.controls.glRef.current.depthThreshold,
-          normalScale: this.controls.glRef.current.scaleNormal,
-          normalThreshold: this.controls.glRef.current.normalThreshold
+          enabled: store.getState().sceneSettings.doEdgeDetect,
+          depthScale: store.getState().sceneSettings.edgeDetectDepthScale,
+          depthThreshold: store.getState().sceneSettings.edgeDetectDepthThreshold,
+          normalScale: store.getState().sceneSettings.edgeDetectNormalScale,
+          normalThreshold: store.getState().sceneSettings.edgeDetectNormalThreshold
       },
-      shadows: this.controls.glRef.current.doShadow,
+      shadows: store.getState().sceneSettings.doShadow,
       ssao: {
-          enabled: this.controls.glRef.current.doSSAO,
-          radius: this.controls.glRef.current.ssaoRadius,
-          bias: this.controls.glRef.current.ssaoBias
+          enabled: store.getState().sceneSettings.doSSAO,
+          radius: store.getState().sceneSettings.ssaoRadius,
+          bias: store.getState().sceneSettings.ssaoBias
       },
       blur: {
-          enabled: this.controls.glRef.current.useOffScreenBuffers,
-          radius: this.controls.glRef.current.blurSize,
-          depth: this.controls.glRef.current.blurDepth
+          enabled: store.getState().sceneSettings.useOffScreenBuffers,
+          radius: store.getState().sceneSettings.depthBlurRadius,
+          depth: store.getState().sceneSettings.depthBlurDepth
       }
     }
     return viewData
@@ -159,7 +161,7 @@ export default class MoorhenWrapper {
 
   setNoDataLegendMessage(htmlString: string) {
     try {
-      this.noDataLegendMessage = parse(htmlString) as JSX.Element
+      this.noDataLegendMessage = parse(htmlString) as React.JSX.Element
     } catch (err) {
       console.log('Unable to parse legend html string')
       console.log(err)
@@ -277,17 +279,19 @@ export default class MoorhenWrapper {
 
   applyView() {
     if (this.viewSettings) {
-      this.controls.glRef.current.setAmbientLightNoUpdate(...Object.values(this.viewSettings.ambientLight) as [number, number, number])
-      this.controls.glRef.current.setSpecularLightNoUpdate(...Object.values(this.viewSettings.specularLight) as [number, number, number])
-      this.controls.glRef.current.setDiffuseLightNoUpdate(...Object.values(this.viewSettings.diffuseLight) as [number, number, number])
-      this.controls.glRef.current.setLightPositionNoUpdate(...Object.values(this.viewSettings.lightPosition) as [number, number, number])
-      this.controls.glRef.current.setZoom(this.viewSettings.zoom, false)
-      this.controls.glRef.current.set_fog_range(this.viewSettings.fogStart, this.viewSettings.fogEnd, false)
-      this.controls.glRef.current.set_clip_range(this.viewSettings.clipStart, this.viewSettings.clipEnd, false)
-      this.controls.glRef.current.doDrawClickedAtomLines = this.viewSettings.doDrawClickedAtomLines
-      this.controls.glRef.current.background_colour = this.viewSettings.backgroundColor
-      this.controls.glRef.current.setQuat(this.viewSettings.quat4)
-      this.controls.glRef.current.setOriginAnimated(this.viewSettings.origin)
+      const store = MoorhenReduxStore
+      store.dispatch(setAmbient(...Object.values(this.viewSettings.ambientLight) as [number, number, number]))
+      store.dispatch(setSpecular(...Object.values(this.viewSettings.specularLight) as [number, number, number]))
+      store.dispatch(setDiffuse(...Object.values(this.viewSettings.diffuseLight) as [number, number, number]))
+      store.dispatch(setLightPosition(...Object.values(this.viewSettings.lightPosition) as [number, number, number]))
+      store.dispatch(setZoom(this.viewSettings.zoom))
+      store.dispatch(setQuat(this.viewSettings.quat4))
+      store.dispatch(setOrigin(this.viewSettings.origin))
+      store.dispatch(setFogStart(this.viewSettings.fogStart))
+      store.dispatch(setFogEnd(this.viewSettings.fogEnd))
+      store.dispatch(setBackgroundColor(this.viewSettings.backgroundColor))
+      store.dispatch(setClipStart(this.viewSettings.clipStart*-1))
+      store.dispatch(setClipEnd(this.viewSettings.clipEnd))
     }
   }
 
@@ -396,7 +400,7 @@ export default class MoorhenWrapper {
         const fileContents = await response.text()
         if (fileContents !== this.cachedLegend) {
           this.controls.setNotifyNewContent(true)
-          const domComponent = parse(fileContents) as JSX.Element
+          const domComponent = parse(fileContents) as React.JSX.Element
           this.controls.setLegendText(domComponent)
           this.cachedLegend = fileContents
           setTimeout(() => this.controls.setNotifyNewContent(false), 4000)
@@ -460,7 +464,7 @@ export default class MoorhenWrapper {
   checkIfLoadedData() {
     // No legend is loaded but there is some data loaded so the current message must be the no data message and must be removed
     if (this.cachedLegend === null && (this.controls.moleculesRef.current.length !== 0 || this.controls.mapsRef.current.length !== 0)) {
-      const domComponent = parse('<div></div>') as JSX.Element
+      const domComponent = parse('<div></div>') as React.JSX.Element
       this.controls.setLegendText(domComponent)
     }
   }
