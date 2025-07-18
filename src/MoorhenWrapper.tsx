@@ -302,6 +302,7 @@ export default class MoorhenWrapper {
     return new Promise(async (resolve, reject) => {
       try {
         await newMap.loadToCootFromMtzURL(inputFile, mapName, selectedColumns)
+        if (newMap.molNo === -1) throw new Error("Cannot read the fetched map...")
         newMap.showOnLoad = isVisible
         if (colour) {
           if (colour.mapColour) {
