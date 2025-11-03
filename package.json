@@ -25,7 +25,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "moorhen": "^0.22.3",
+    "moorhen": "^0.22.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   }
