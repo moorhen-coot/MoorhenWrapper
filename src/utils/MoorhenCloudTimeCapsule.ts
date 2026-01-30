@@ -1,24 +1,25 @@
-import { moorhen } from "moorhen/types/moorhen"
+import { moorhen } from "moorhen/types/moorhen";
+import LocalForage from "localforage";
 
 export interface CloudBackupInterface extends moorhen.backupKey {
     serNo: number | string;
     data: string;
 }
 
-export interface CloudStorageInstanceInterface extends Omit<moorhen.LocalStorageInstance, "getItem"> {
+export interface CloudStorageInstanceInterface {
     getItem: (arg0: string) => Promise<string | Uint8Array | ArrayBuffer>;
     setItem: (arg0: string, arg1: string | ArrayBuffer) => Promise<string>;
     exportBackupCallback: (arg0: CloudBackupInterface) => Promise<string | void>;
     importBackupCallback: (arg0: string | number) => Promise<CloudBackupInterface | void>;
-    removeBackupCallback: (arg: string | number) => Promise<void>
-    loadBackupList: () => Promise<CloudBackupInterface[]>
+    removeBackupCallback: (arg: string | number) => Promise<void>;
+    loadBackupList: () => Promise<CloudBackupInterface[]>;
 }
 
 export class CloudStorageInstance implements CloudStorageInstanceInterface {
     exportBackupCallback: (arg0: CloudBackupInterface) => Promise<string | void>;
     importBackupCallback: (arg0: string | number) => Promise<CloudBackupInterface | void>;
-    removeBackupCallback: (arg: string | number) => Promise<void>
-    loadBackupList: () => Promise<CloudBackupInterface[]>
+    removeBackupCallback: (arg: string | number) => Promise<void>;
+    loadBackupList: () => Promise<CloudBackupInterface[]>;
 
     constructor() {
         /** THIS CAN BE USED FOR TESTING PURPOSES
@@ -59,73 +60,75 @@ export class CloudStorageInstance implements CloudStorageInstanceInterface {
         }
     
         */
-        this.exportBackupCallback = async () => { }
-        this.importBackupCallback = async () => { }
-        this.removeBackupCallback = async () => { }
-        this.loadBackupList = async () => { return [] }
+        this.exportBackupCallback = async () => {};
+        this.importBackupCallback = async () => {};
+        this.removeBackupCallback = async () => {};
+        this.loadBackupList = async () => {
+            return [];
+        };
     }
-    
-    setItem(keyString: string, value: string | ArrayBuffer): Promise<string> {
-        const key: moorhen.backupKey = JSON.parse(keyString)
 
-        let backup: CloudBackupInterface
-        if (key.type === 'version') {
-            backup = {  ...key, serNo: 0, data: value as string }
-        } else if (key.type === 'mtzData') {
-            const jsonString = JSON.stringify(Array.from(value as string))
+    setItem(keyString: string, value: string | ArrayBuffer): Promise<string> {
+        const key: moorhen.backupKey = JSON.parse(keyString);
+
+        let backup: CloudBackupInterface;
+        if (key.type === "version") {
+            backup = { ...key, serNo: 0, data: value as string };
+        } else if (key.type === "mtzData") {
+            const jsonString = JSON.stringify(Array.from(value as string));
             backup = {
                 ...key,
-                serNo: key.name.replace('./', '').replace('.mtz', '-mtz'),
+                serNo: key.name.replace("./", "").replace(".mtz", "-mtz"),
                 data: jsonString,
-            }
-        } else if (key.type === 'mapData') {
-            const uintArray = new Uint8Array(value as ArrayBuffer)
-            const jsonString = JSON.stringify(Array.from(uintArray))
+            };
+        } else if (key.type === "mapData") {
+            const uintArray = new Uint8Array(value as ArrayBuffer);
+            const jsonString = JSON.stringify(Array.from(uintArray));
             backup = {
                 ...key,
                 serNo: key.name,
                 data: jsonString,
-            }
+            };
         } else {
-            backup = { data: value as string, ...key }
+            backup = { data: value as string, ...key };
         }
 
-        return this.exportBackupCallback(backup) as Promise<string>
+        return this.exportBackupCallback(backup) as Promise<string>;
     }
 
     async getItem(keyString: string): Promise<string | Uint8Array | ArrayBuffer> {
-        const key = JSON.parse(keyString)
-        if (key.type === 'version') {
-            const backup = await this.importBackupCallback(0) as CloudBackupInterface
-            return backup?.data
-        } else if (key.type === 'mtzData') {
-            const backup = await this.importBackupCallback(key.name.replace('./', '').replace('.mtz', '-mtz')) as CloudBackupInterface
-            const mtzData = new Uint8Array(JSON.parse(backup.data))
-            return mtzData
-        } else if (key.type === 'mapData') {
-            const backup = await this.importBackupCallback(key.name) as CloudBackupInterface
-            const uintArray = new Uint8Array(JSON.parse(backup.data))
-            return uintArray.buffer
+        const key = JSON.parse(keyString);
+        if (key.type === "version") {
+            const backup = (await this.importBackupCallback(0)) as CloudBackupInterface;
+            return backup?.data;
+        } else if (key.type === "mtzData") {
+            const backup = (await this.importBackupCallback(
+                key.name.replace("./", "").replace(".mtz", "-mtz")
+            )) as CloudBackupInterface;
+            const mtzData = new Uint8Array(JSON.parse(backup.data));
+            return mtzData;
+        } else if (key.type === "mapData") {
+            const backup = (await this.importBackupCallback(key.name)) as CloudBackupInterface;
+            const uintArray = new Uint8Array(JSON.parse(backup.data));
+            return uintArray.buffer;
         } else {
-            const backup = await this.importBackupCallback(key.serNo) as CloudBackupInterface
-            return backup.data
+            const backup = (await this.importBackupCallback(key.serNo)) as CloudBackupInterface;
+            return backup.data;
         }
     }
 
     async keys(): Promise<string[]> {
-        const allKeys = await this.loadBackupList()
-        return allKeys.map(key => JSON.stringify(key))
+        const allKeys = await this.loadBackupList();
+        return allKeys.map((key) => JSON.stringify(key));
     }
 
     async clear(): Promise<void> {
-        const allKeys = await this.loadBackupList()
-        await Promise.all(
-            allKeys.map(key => this.removeBackupCallback(key.serNo))
-        )
+        const allKeys = await this.loadBackupList();
+        await Promise.all(allKeys.map((key) => this.removeBackupCallback(key.serNo)));
     }
 
     removeItem(keyString: string): Promise<void> {
-        const key: CloudBackupInterface = JSON.parse(keyString)
-        return this.removeBackupCallback(key.serNo)
+        const key: CloudBackupInterface = JSON.parse(keyString);
+        return this.removeBackupCallback(key.serNo);
     }
 }

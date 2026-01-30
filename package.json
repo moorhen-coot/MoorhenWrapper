@@ -1,34 +1,34 @@
 {
-  "name": "moorhenwrapper",
-  "version": "0.1.0",
-  "description": "A wrapper for Moorhen web molecular graphics program",
-  "main": "webcoot.js",
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  },
-  "scripts": {
-    "build-cloud-dev": "webpack  --mode development --devtool inline-source-map --env destination='ccp4Cloud'",
-    "build-cloud": "webpack --mode production --env destination='ccp4Cloud'"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/moorhen-coot/MoorhenWrapper.git"
-  },
-  "author": "",
-  "bugs": {
-    "url": "https://github.com/moorhen-coot/MoorhenWrapper/issues"
-  },
-  "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "moorhen": "^0.22.0-beta.7",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  }
+    "name": "moorhenwrapper",
+    "version": "0.1.0",
+    "description": "A wrapper for Moorhen web molecular graphics program",
+    "main": "webcoot.js",
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4",
+        "@types/node": "^20",
+        "@types/react": "19.2",
+        "@types/react-dom": "19.2",
+        "tailwindcss": "^4",
+        "typescript": "^5"
+    },
+    "scripts": {
+        "build-cloud-dev": "webpack  --mode development --devtool inline-source-map --env destination='ccp4Cloud'",
+        "build-cloud": "webpack --mode production --env destination='ccp4Cloud'"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/moorhen-coot/MoorhenWrapper.git"
+    },
+    "author": "",
+    "bugs": {
+        "url": "https://github.com/moorhen-coot/MoorhenWrapper/issues"
+    },
+    "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "moorhen": "1.0",
+        "react": "19.2.0",
+        "react-dom": "19.2.0"
+    }
 }
