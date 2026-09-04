@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import type { Store } from "@reduxjs/toolkit";
+
 import { MoorhenCloudApp, MoorhenCloudControls } from "./components/MoorhenCloudApp";
 import {
     CloudBackupInterface,
@@ -29,17 +29,19 @@ import {
     setClipStart,
     setClipEnd,
     setBackgroundColor,
-    viewDataSession,
-    PreferencesValues,
+    // viewDataSession,
+    // PreferencesValues,
     MoorhenReduxStoreType,
     MoorhenProvider,
-    MoorhenStoreRootState,
-} from "moorhen";
+    // MoorhenStoreRootState,
+} from "moorhen/react-lib";
+import { moorhen } from "moorhen/types/moorhen";
 import { guid } from "./utils/utils";
 import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import reportWebVitals from "./reportWebVitals";
 import parse from "html-react-parser";
-import { moorhen } from "moorhen/types/moorhen";
+type PreferencesValues = moorhen.PreferencesValues;
+type viewDataSession = moorhen.viewDataSession;
 
 type PdbInputFileType = {
     type: "pdb";
@@ -128,21 +130,21 @@ export default class MoorhenWrapper {
         this.viewSettings = newSettings;
     }
 
-    getViewSettings(store: Store<MoorhenStoreRootState>) {
+    getViewSettings(store: MoorhenReduxStoreType) {
         const viewData: viewDataSession = {
-            origin: store.getState().glRef.origin as [number, number, number],
+            origin: store.getState().sceneSettings.origin as [number, number, number],
             backgroundColor: store.getState().sceneSettings.backgroundColor,
-            ambientLight: store.getState().glRef.ambient,
-            diffuseLight: store.getState().glRef.diffuse,
-            lightPosition: store.getState().glRef.lightPosition,
-            specularLight: store.getState().glRef.specular,
-            fogStart: store.getState().glRef.fogStart,
-            fogEnd: store.getState().glRef.fogEnd,
-            zoom: store.getState().glRef.zoom,
+            ambientLight: store.getState().sceneSettings.ambient,
+            diffuseLight: store.getState().sceneSettings.diffuse,
+            lightPosition: store.getState().sceneSettings.lightPosition,
+            specularLight: store.getState().sceneSettings.specular,
+            fogStart: store.getState().sceneSettings.fogStart,
+            fogEnd: store.getState().sceneSettings.fogEnd,
+            zoom: store.getState().sceneSettings.zoom,
             doDrawClickedAtomLines: false,
-            clipStart: store.getState().glRef.clipStart * -1,
-            clipEnd: store.getState().glRef.clipEnd,
-            specularPower: store.getState().glRef.specularPower,
+            clipStart: store.getState().sceneSettings.clipStart * -1,
+            clipEnd: store.getState().sceneSettings.clipEnd,
+            specularPower: store.getState().sceneSettings.specularPower,
             quat4: store.getState().glRef.quat,
             doPerspectiveProjection: store.getState().sceneSettings.doPerspectiveProjection,
             edgeDetection: {

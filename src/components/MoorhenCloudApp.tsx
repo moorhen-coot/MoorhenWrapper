@@ -1,36 +1,32 @@
 import React from "react";
 import { useRef, useState, useEffect } from "react";
 import {
-    MainMenuEntryJSX,
     MoorhenContainer,
     MoorhenReduxStoreType,
-    MoorhenStoreRootState,
+    RootState,
     useCommandCentre,
-} from "moorhen";
-import { MoorhenMolecule, MoorhenMap, CommandCentre, MoorhenTimeCapsule, useMoorhenInstance } from "moorhen";
-import Moorhen from "moorhen";
+} from "moorhen/react-lib";
+import type { MainMenuEntryJSX } from "moorhen/react-lib";
+import { MoorhenMolecule, MoorhenMap, CommandCentre, MoorhenTimeCapsule, useMoorhenInstance } from "moorhen/react-lib";
 import { MoorhenLegendToast } from "./misc/MoorhenLegendToast";
 import { MoorhenExitMenu } from "./NavBarMenus/MoorhenExitMenu";
 import { moorhen } from "moorhen/types/moorhen";
-import { webGL } from "moorhen/types/mgWebGL";
-import { LogoutOutlined } from "@mui/icons-material";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { AnyAction, Dispatch } from "@reduxjs/toolkit";
 import { CloudStorageInstanceInterface } from "../utils/MoorhenCloudTimeCapsule";
-import type { EnhancedStore, Store } from "@reduxjs/toolkit";
+import type { Store } from "@reduxjs/toolkit";
 
 export type MoorhenCloudControls = {
     setNotifyNewContent: React.Dispatch<React.SetStateAction<boolean>>;
     setLegendText: React.Dispatch<React.SetStateAction<React.JSX.Element>>;
     setBusyFetching: React.Dispatch<React.SetStateAction<boolean>>;
-    glRef: React.RefObject<webGL.MGWebGL>;
     commandCentre: React.RefObject<CommandCentre>;
     timeCapsuleRef: React.RefObject<MoorhenTimeCapsule>;
     moleculesRef: React.RefObject<MoorhenMolecule[]>;
     mapsRef: React.RefObject<MoorhenMap[]>;
     activeMapRef: React.RefObject<MoorhenMap>;
     dispatch: Dispatch<AnyAction>;
-    store: Store<MoorhenStoreRootState>;
+    store: Store<RootState>;
 };
 
 interface MoorhenCloudAppPropsInterface {
@@ -48,14 +44,13 @@ interface MoorhenCloudAppPropsInterface {
 }
 
 export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
-    const glRef = useRef<webGL.MGWebGL | null>(null);
-    const timeCapsuleRef = useRef<Moorhen.MoorhenTimeCapsule | null>(null);
+    const timeCapsuleRef = useRef<MoorhenTimeCapsule | null>(null);
     // const commandCentre = useRef<moorhen.CommandCentre | null>(null);
     const moleculesRef = useRef<MoorhenMolecule[] | null>(null);
     const mapsRef = useRef<moorhen.Map[] | null>(null);
     const activeMapRef = useRef<moorhen.Map | null>(null);
     const commandCentre = useCommandCentre();
-    const store = useStore<MoorhenStoreRootState>();
+    const store = useStore<RootState>();
     const moorhenInstance = useMoorhenInstance();
 
     const [legendText, setLegendText] = useState<string | React.JSX.Element>("Loading, please wait...");
@@ -67,7 +62,6 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
 
     const collectedProps = {
         ...props,
-        glRef,
         commandCentre,
         timeCapsuleRef,
         moleculesRef,
@@ -82,7 +76,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         icon: "MatSymLogout",
     };
     const onInitialisationCompletedCallback = async () => {
-        moorhenInstance.getMenuSystem().addMainMenu(extraMainMenu);
+        moorhenInstance.menuSystem?.addMainMenu(extraMainMenu);
     };
 
     useEffect(() => {
@@ -91,7 +85,6 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
                 setLegendText,
                 setBusyFetching,
                 setNotifyNewContent,
-                glRef,
                 commandCentre,
                 timeCapsuleRef,
                 moleculesRef,

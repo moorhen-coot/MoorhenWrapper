@@ -1,6 +1,7 @@
 const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 const path = require("path");
 
@@ -35,6 +36,7 @@ module.exports = (env, argv) => {
         target: "web",
         optimization: {
             minimize: argv.mode === "development" ? false : true,
+            minimizer: [new TerserPlugin({ extractComments: false })],
         },
         cache: false,
         output: {
@@ -51,18 +53,19 @@ module.exports = (env, argv) => {
             rules: [
                 {
                     test: /\.tsx$/,
-                    use: "ts-loader",
+                    use: {
+                        loader: "ts-loader",
+                        options: { transpileOnly: true },
+                    },
                     exclude: /node_modules/,
                 },
                 {
                     test: /\.ts$/,
-                    use: "ts-loader",
+                    use: {
+                        loader: "ts-loader",
+                        options: { transpileOnly: true },
+                    },
                     exclude: /node_modules/,
-                },
-                {
-                    test: /\.js$/,
-                    exclude: [/node_modules/, path.resolve(paths.src, "index.js"), paths.publicAssets],
-                    loader: "babel-loader",
                 },
                 {
                     test: /\.(?:ico|gif|png|jpg|jpeg|svg|xpm)$/,
