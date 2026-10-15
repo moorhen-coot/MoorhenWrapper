@@ -29,32 +29,24 @@
                 { type: "pdb", args: [`./MoorhenAssets/tutorials/moorhen-tutorial-structure-number-1.pdb`, `mol-1`] },
                 {
                     type: "mtz",
-                    args: [
-                        `./MoorhenAssets/tutorials/moorhen-tutorial-map-number-1.mtz`,
-                        `diff-map-1`,
-                        { F: "DELFWT", PHI: "PHDELWT", isDifference: true, useWeight: false },
+                    url: `./MoorhenAssets/tutorials/moorhen-tutorial-map-number-1.mtz`,
+                    maps: [
                         {
-                            positiveDiffColour: { r: 0.0, g: 1.0, b: 0.0 },
-                            negativeDiffColour: { r: 1.0, g: 0.0, b: 0.0 },
-                        },
-                    ],
-                },
-                {
-                    type: "mtz",
-                    args: [
-                        `./MoorhenAssets/tutorials/moorhen-tutorial-map-number-1.mtz`,
-                        `map-1`,
-                        {
-                            isDifference: false,
-                            useWeight: false,
+                            name: "map-1",
+                            columns: { F: "FWT", PHI: "PHWT", Fobs: "FP", SigFobs: "SIGFP", FreeR: "FREE" },
                             calcStructFact: true,
-                            F: "FWT",
-                            PHI: "PHWT",
-                            Fobs: "FP",
-                            SigFobs: "SIGFP",
-                            FreeR: "FREE",
+                            style: { colour: { r: 0.0, g: 0.0, b: 1.0 } },
+                            active: true,
                         },
-                        { mapColour: { r: 0.0, g: 0.0, b: 1.0 } },
+                        {
+                            name: "diff-map-1",
+                            columns: { F: "DELFWT", PHI: "PHDELWT" },
+                            isDifference: true,
+                            style: {
+                                positiveColour: { r: 0.0, g: 1.0, b: 0.0 },
+                                negativeColour: { r: 1.0, g: 0.0, b: 0.0 },
+                            },
+                        },
                     ],
                 },
             ];

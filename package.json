@@ -20,7 +20,8 @@
     },
     "scripts": {
         "build-cloud-dev": "webpack  --mode development --devtool inline-source-map --env destination='ccp4Cloud'",
-        "build-cloud": "webpack --mode production --env destination='ccp4Cloud'"
+        "build-cloud": "webpack --mode production --env destination='ccp4Cloud'",
+        "force-install": "rm -rf node_modules/moorhen && rm package-lock.json && npm cache clean --force && npm install"
     },
     "repository": {
         "type": "git",
@@ -38,7 +39,7 @@
         "@reduxjs/toolkit": "^2.12.0",
         "html-react-parser": "^6.1.7",
         "localforage": "^1.10.0",
-        "moorhen": "1.0.0",
+        "moorhen": "file:///home/clement/Projects/Moorhen/baby-gru/dist/moorhen-1.0.2.tgz",
         "react": "19.2.8",
         "react-bootstrap": "^2.10.10",
         "react-dom": "19.2.8",

@@ -8,15 +8,9 @@ import {
     CloudStorageInstanceInterface,
 } from "./utils/MoorhenCloudTimeCapsule";
 import {
-    MoorhenMap,
     MoorhenMolecule,
     MoorhenPreferences,
-    addMap,
-    setActiveMap,
     addMolecule,
-    setMapColours,
-    setNegativeMapColours,
-    setPositiveMapColours,
     setOrigin,
     setZoom,
     setQuat,
@@ -35,13 +29,22 @@ import {
     MoorhenProvider,
     // MoorhenStoreRootState,
 } from "moorhen/react-lib";
-import { moorhen } from "moorhen/types/moorhen";
+import type { MtzMapRequest } from "moorhen/react-lib";
+import type { moorhen } from "moorhen/types/moorhen.d.ts";
 import { guid } from "./utils/utils";
 import { MoorhenAceDRGInstance } from "./utils/MoorhenAceDRGInstance";
 import reportWebVitals from "./reportWebVitals";
 import parse from "html-react-parser";
-type PreferencesValues = moorhen.PreferencesValues;
 type viewDataSession = moorhen.viewDataSession;
+
+// Preferences as exchanged with the host (CCP4 Cloud): a verbatim copy of what Moorhen keeps in its
+// preference storage, i.e. only the preferences that differ from the default, each as { version, value }.
+// Moorhen checks the versions itself when it restores them, so the host never needs to understand the content.
+const PREFERENCES_FORMAT = "moorhen-1.0";
+type StoredPreferences = {
+    format: typeof PREFERENCES_FORMAT;
+    entries: { [label: string]: { version: number; value: unknown } };
+};
 
 type PdbInputFileType = {
     type: "pdb";
@@ -49,17 +52,12 @@ type PdbInputFileType = {
     args: [string, string];
 };
 
+// One entry per MTZ file, with all the maps read from it
 type MapInputFileType = {
     type: "mtz";
     uniqueId?: string;
-    args: [
-        string,
-        string,
-        moorhen.selectedMtzColumns,
-        boolean?,
-        boolean?,
-        { [type: string]: { r: number; g: number; b: number } }?,
-    ];
+    url: string;
+    maps: MtzMapRequest[];
 };
 
 type LegendInputFileType = {
@@ -88,8 +86,8 @@ export default class MoorhenWrapper {
     workMode: "build" | "view" | "view-update";
     inputFiles: (PdbInputFileType | MapInputFileType | LegendInputFileType | LigandInputFileType | PAEInputFileType)[];
     rootId: string;
-    preferences: PreferencesValues;
-    cachedPreferences: PreferencesValues;
+    preferences: StoredPreferences | null;
+    preferenceStorage: LocalForage;
     cachedLegend: string;
     cachedLigandDictionaries: string[];
     noDataLegendMessage: React.JSX.Element;
@@ -98,11 +96,15 @@ export default class MoorhenWrapper {
         molData: { molName: string; pdbData: string; mmcifData: string }[];
         ligData: string[];
     }) => Promise<void>;
-    exportPreferencesCallback: (arg0: PreferencesValues) => void;
+    exportPreferencesCallback: (arg0: StoredPreferences) => void;
     backupStorageInstance: CloudStorageInstanceInterface;
     aceDRGInstance: MoorhenAceDRGInstance;
     viewSettings: viewDataSession;
     paeData: { [fileName: string]: string };
+    // input file uniqueId -> uniqueId of the molecule created by moorhenInstance.files.loadFiles
+    loadedMoleculeIds: { [inputFileId: string]: string };
+    // input file uniqueId -> uniqueIds of the maps created by moorhenInstance.files.loadMtz
+    loadedMapIds: { [inputFileId: string]: string[] };
 
     constructor(urlPrefix: string) {
         this.urlPrefix = urlPrefix;
@@ -113,7 +115,8 @@ export default class MoorhenWrapper {
         this.inputFiles = null;
         this.rootId = null;
         this.preferences = null;
-        this.cachedPreferences = null;
+        // Same storage that Moorhen's preference persistence reads from and writes to
+        this.preferenceStorage = new MoorhenPreferences().localStorageInstance;
         this.cachedLegend = null;
         this.cachedLigandDictionaries = [];
         this.noDataLegendMessage = parse("<div></div>") as React.JSX.Element;
@@ -123,6 +126,8 @@ export default class MoorhenWrapper {
         this.aceDRGInstance = new MoorhenAceDRGInstance();
         this.viewSettings = null;
         this.paeData = {};
+        this.loadedMoleculeIds = {};
+        this.loadedMapIds = {};
         reportWebVitals();
     }
 
@@ -208,8 +213,11 @@ export default class MoorhenWrapper {
         }
     }
 
-    setPreferences(preferences: moorhen.PreferencesValues) {
-        this.preferences = preferences;
+    // Preferences previously sent to the host through addOnChangePreferencesListener; anything else
+    // (e.g. the flat pre-1.0 format) is ignored, as Moorhen 1.0 would discard it anyway
+    setPreferences(preferences: unknown) {
+        const stored = preferences as StoredPreferences;
+        this.preferences = stored?.format === PREFERENCES_FORMAT && stored.entries ? stored : null;
     }
 
     setRootId(rootId: string) {
@@ -240,34 +248,22 @@ export default class MoorhenWrapper {
         this.exitCallback = callbackFunction;
     }
 
-    addOnChangePreferencesListener(callbackFunction: (arg0: PreferencesValues) => void) {
+    addOnChangePreferencesListener(callbackFunction: (arg0: StoredPreferences) => void) {
         this.exportPreferencesCallback = callbackFunction;
     }
 
-    onChangePreferencesListener(key: string, value: any): void {
-        switch (key) {
-            case "defaultBackgroundColor":
-            case "defaultUpdatingScores":
-                if (JSON.stringify(this.cachedPreferences[key]) !== JSON.stringify(value)) {
-                    this.cachedPreferences[key] = value;
-                    this.exportPreferencesCallback(this.cachedPreferences);
-                }
-                break;
+    // Moorhen calls this after it has stored a changed preference. It is not called when a preference is
+    // set back to its default (the stored entry is just removed), so exit() exports them again as well.
+    onChangePreferencesListener(_key: string, _value: unknown): void {
+        this.exportPreferences().catch((err) => console.log(err));
+    }
 
-            case "shortCuts":
-                if (JSON.stringify(this.cachedPreferences[key]) !== value) {
-                    this.cachedPreferences[key] = JSON.parse(value);
-                    this.exportPreferencesCallback(this.cachedPreferences);
-                }
-                break;
-
-            default:
-                if (this.cachedPreferences[key] !== value) {
-                    this.cachedPreferences[key] = value;
-                    this.exportPreferencesCallback(this.cachedPreferences);
-                }
-                break;
-        }
+    async exportPreferences(): Promise<void> {
+        const entries: StoredPreferences["entries"] = {};
+        await this.preferenceStorage.iterate((entry: { version: number; value: unknown }, label: string) => {
+            entries[label] = entry;
+        });
+        this.exportPreferencesCallback({ format: PREFERENCES_FORMAT, entries });
     }
 
     forwardControls(controls: MoorhenCloudControls) {
@@ -275,28 +271,15 @@ export default class MoorhenWrapper {
         this.controls = controls;
     }
 
-    async importPreferences(incomingPreferences: PreferencesValues) {
-        const defaultPreferences = MoorhenPreferences.defaultPreferencesValues;
-        let preferences: PreferencesValues;
-
-        if (incomingPreferences.version === defaultPreferences.version) {
-            preferences = incomingPreferences;
-        } else {
-            preferences = defaultPreferences;
+    // Must run before Moorhen is rendered: Moorhen restores its preferences from this storage on start-up.
+    // The host's copy is the reference, so whatever this browser stored before is replaced.
+    async importPreferences(preferences: StoredPreferences | null) {
+        await this.preferenceStorage.clear();
+        if (preferences) {
+            await Promise.all(
+                Object.entries(preferences.entries).map(([label, entry]) => this.preferenceStorage.setItem(label, entry)),
+            );
         }
-
-        const moorhenPreferences = new MoorhenPreferences();
-        await Promise.all(
-            Object.keys(preferences).map((key) => {
-                if (key === "shortCuts") {
-                    return moorhenPreferences.localStorageInstance.setItem(key, JSON.stringify(preferences[key]));
-                } else {
-                    return moorhenPreferences.localStorageInstance.setItem(key, preferences[key]);
-                }
-            }),
-        );
-
-        this.cachedPreferences = preferences;
     }
 
     addStyleSheet(uri: string) {
@@ -341,75 +324,33 @@ export default class MoorhenWrapper {
         }
     }
 
-    async loadMtzData(
-        uniqueId: string,
-        inputFile: string,
-        mapName: string,
-        selectedColumns: moorhen.selectedMtzColumns,
-        isVisible: boolean = true,
-        isActiveMap: boolean = false,
-        colour?: { [type: string]: { r: number; g: number; b: number } },
-    ): Promise<moorhen.Map> {
-        const newMap = new MoorhenMap(this.controls.commandCentre, this.controls.store);
-        newMap.uniqueId = uniqueId;
-
-        return new Promise(async (resolve, reject) => {
-            try {
-                await newMap.loadToCootFromMtzURL(inputFile, mapName, selectedColumns);
-                newMap.showOnLoad = isVisible;
-                if (colour) {
-                    if (colour.mapColour) {
-                        this.controls.dispatch(setMapColours({ molNo: newMap.molNo, rgb: colour.mapColour }));
-                    }
-                    if (colour.negativeDiffColour) {
-                        this.controls.dispatch(
-                            setNegativeMapColours({ molNo: newMap.molNo, rgb: colour.negativeDiffColour }),
-                        );
-                    }
-                    if (colour.positiveDiffColour) {
-                        this.controls.dispatch(
-                            setPositiveMapColours({ molNo: newMap.molNo, rgb: colour.positiveDiffColour }),
-                        );
-                    }
-                }
-                this.controls.dispatch(addMap(newMap));
-                if (isActiveMap) {
-                    this.controls.dispatch(setActiveMap(newMap));
-                }
-                return resolve(newMap);
-            } catch (err) {
-                console.log(`Cannot fetch mtz from ${inputFile}`);
-                return reject(err);
-            }
-        });
+    async loadMtzData(uniqueId: string, url: string, maps: MtzMapRequest[]): Promise<void> {
+        const loaded = await this.controls.moorhenInstance.files.loadMtz(url, maps, "cloud");
+        this.loadedMapIds[uniqueId] = loaded.map((item) => item.uniqueID);
     }
 
-    async loadPdbData(uniqueId: string, inputFile: string, molName: string): Promise<moorhen.Molecule> {
-        const newMolecule = new MoorhenMolecule(
-            this.controls.commandCentre,
-            this.controls.store,
-            this.monomerLibrary,
-        ) as moorhen.Molecule;
+    async loadPdbData(uniqueId: string, inputFile: string, molName: string): Promise<MoorhenMolecule> {
+        // loadFiles picks the parser from the file extension and names the molecule after the
+        // file name (extension stripped), so pass molName + the extension of the source URL
+        const url = new URL(inputFile, document.baseURI);
+        const extension = url.pathname.match(/\.(pdb|ent|cif|mmcif)$/i)?.[0] ?? ".pdb";
+        const loaded = await this.controls.moorhenInstance.files.loadFiles(
+            { url, filename: `${molName}${extension}` },
+            "cloud",
+        );
+        const result = loaded?.find((item) => item.type === "molecule");
+        if (!result) {
+            throw new Error(`Cannot load molecule from ${inputFile}`);
+        }
+        this.loadedMoleculeIds[uniqueId] = result.uniqueID;
+        const newMolecule = this.controls.moorhenInstance.getMolecule(result.uniqueID);
+        this.cachedLigandDictionaries.forEach((ligandDict) => ligandDict && newMolecule.cacheLigandDict(ligandDict));
+        return newMolecule;
+    }
 
-        return new Promise(async (resolve, reject) => {
-            try {
-                newMolecule.uniqueId = uniqueId;
-                this.cachedLigandDictionaries.forEach(
-                    (ligandDict) => ligandDict && newMolecule.cacheLigandDict(ligandDict),
-                );
-                newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour);
-                await newMolecule.loadToCootFromURL(inputFile, molName);
-                await newMolecule.fetchIfDirtyAndDraw(newMolecule.atomCount >= 50000 ? "CRs" : "CBs");
-                this.controls.dispatch(addMolecule(newMolecule));
-                if (!this.viewSettings) {
-                    await newMolecule.centreOn();
-                }
-                return resolve(newMolecule);
-            } catch (err) {
-                console.log(`Cannot fetch molecule from ${inputFile}`);
-                return reject(err);
-            }
-        });
+    getLoadedMolecule(inputFileId: string): MoorhenMolecule | undefined {
+        const moleculeId = this.loadedMoleculeIds[inputFileId];
+        return moleculeId ? this.controls.moorhenInstance.getMolecule(moleculeId) : undefined;
     }
 
     async getMonomerOnStart(url: string, ligandNames: string[]) {
@@ -424,14 +365,10 @@ export default class MoorhenWrapper {
                     true,
                 );
                 if (getMonomerResult.data.result.status === "Completed" && getMonomerResult.data.result.result !== -1) {
-                    const newMolecule = new MoorhenMolecule(
-                        this.controls.commandCentre,
-                        this.controls.store,
-                        this.monomerLibrary,
-                    ) as unknown as moorhen.Molecule;
+                    const newMolecule = new MoorhenMolecule(this.controls.moorhenInstance);
                     newMolecule.molNo = getMonomerResult.data.result.result;
                     newMolecule.name = ligandName;
-                    newMolecule.setBackgroundColour(this.controls.glRef.current.background_colour);
+                    newMolecule.setBackgroundColour(this.controls.store.getState().sceneSettings.backgroundColor);
                     this.cachedLigandDictionaries.forEach(
                         (ligandDict) => ligandDict && newMolecule.cacheLigandDict(ligandDict),
                     );
@@ -510,7 +447,7 @@ export default class MoorhenWrapper {
                     if (file.type === "pdb") {
                         return this.loadPdbData(file.uniqueId, ...file.args);
                     } else if (file.type === "mtz") {
-                        return this.loadMtzData(file.uniqueId, ...file.args);
+                        return this.loadMtzData(file.uniqueId, file.url, file.maps);
                     } else if (file.type === "legend") {
                         return this.loadLegend(...file.args);
                     } else if (file.type === "ligand") {
@@ -524,14 +461,6 @@ export default class MoorhenWrapper {
                     }
                 }),
             );
-            const state = this.controls.store.getState();
-            if (!state.generalStates.activeMap && this.inputFiles.some((file) => file.type === "mtz")) {
-                const activeMapId = this.inputFiles.find((file) => file.type === "mtz")?.uniqueId;
-                const activeMap = state.maps.find((map) => map.uniqueId === activeMapId);
-                if (activeMap) {
-                    this.controls.dispatch(setActiveMap(activeMap));
-                }
-            }
         } catch (err) {
             console.log("Error fetching files...");
             console.log(err);
@@ -542,7 +471,8 @@ export default class MoorhenWrapper {
         // No legend is loaded but there is some data loaded so the current message must be the no data message and must be removed
         if (
             this.cachedLegend === null &&
-            (this.controls.moleculesRef.current.length !== 0 || this.controls.mapsRef.current.length !== 0)
+            (this.controls.moorhenInstance.getMoleculeList().length !== 0 ||
+                this.controls.moorhenInstance.getMapList().length !== 0)
         ) {
             const domComponent = parse("<div></div>") as React.JSX.Element;
             this.controls.setLegendText(domComponent);
@@ -577,9 +507,7 @@ export default class MoorhenWrapper {
         const moleculeInputFiles = this.inputFiles.filter((file) => file.type === "pdb") as PdbInputFileType[];
         return Promise.all(
             moleculeInputFiles.map((inputFile) => {
-                const loadedMolecule = this.controls.moleculesRef.current.find(
-                    (molecule) => molecule.uniqueId === inputFile.uniqueId,
-                );
+                const loadedMolecule = this.getLoadedMolecule(inputFile.uniqueId);
                 if (typeof loadedMolecule === "undefined") {
                     return this.loadPdbData(inputFile.uniqueId, ...inputFile.args).catch((err) => console.log(err));
                 } else {
@@ -604,14 +532,20 @@ export default class MoorhenWrapper {
         const mapInputFiles = this.inputFiles.filter((file) => file.type === "mtz") as MapInputFileType[];
         return Promise.all(
             mapInputFiles.map((inputFile) => {
-                const loadedMap = this.controls.mapsRef.current.find((map) => map.uniqueId === inputFile.uniqueId);
-                if (typeof loadedMap === "undefined") {
-                    return this.loadMtzData(inputFile.uniqueId, ...inputFile.args).catch((err) => console.log(err));
-                } else {
-                    return loadedMap
-                        .replaceMapWithMtzFile(inputFile.args[0], inputFile.args[2])
-                        .catch((err) => console.log(err));
+                const mapIds = this.loadedMapIds[inputFile.uniqueId];
+                if (!mapIds) {
+                    return this.loadMtzData(inputFile.uniqueId, inputFile.url, inputFile.maps).catch((err) =>
+                        console.log(err),
+                    );
                 }
+                return Promise.all(
+                    mapIds
+                        .map((mapId) => this.controls.moorhenInstance.getMap(mapId))
+                        .filter((map) => map)
+                        .map((map) =>
+                            map.replaceMapWithMtzFile(inputFile.url, map.selectedColumns).catch((err) => console.log(err)),
+                        ),
+                );
             }),
         );
     }
@@ -652,9 +586,6 @@ export default class MoorhenWrapper {
     }
 
     async start() {
-        if (!this.preferences) {
-            this.preferences = MoorhenPreferences.defaultPreferencesValues;
-        }
         await this.importPreferences(this.preferences);
 
         this.renderMoorhen();
@@ -664,9 +595,10 @@ export default class MoorhenWrapper {
             this.controls.setLegendText(this.noDataLegendMessage);
         }
 
-        this.applyView(this.controls.store);
-
         await this.loadInputFiles();
+
+        // loadFiles centres on the last molecule it loads, so a saved view has to be applied afterwards
+        this.applyView(this.controls.store);
 
         if (this.updateInterval !== null) {
             this.checkIfLoadedData();
@@ -675,14 +607,15 @@ export default class MoorhenWrapper {
     }
 
     async getMoleculeData() {
+        const molecules = this.controls.moorhenInstance.getMoleculeList();
         let modifiedMolecules: number[];
         // If the head is detached then any molecule may have been modified so lets store all of them...
         if (this.controls.commandCentre.current.history.headIsDetached) {
-            modifiedMolecules = this.controls.moleculesRef.current.map((molecule) => molecule.molNo);
+            modifiedMolecules = molecules.map((molecule) => molecule.molNo);
         } else {
             modifiedMolecules = this.controls.commandCentre.current.history.getModifiedMolNo();
         }
-        const selectedMolecules = this.controls.moleculesRef.current.filter(
+        const selectedMolecules = molecules.filter(
             (molecule) =>
                 !molecule.isLigand && (molecule.isMRSearchModel || modifiedMolecules.includes(molecule.molNo)),
         );
@@ -701,7 +634,7 @@ export default class MoorhenWrapper {
 
     getLigData() {
         const ligandData: { [compId: string]: string } = {};
-        this.controls.moleculesRef.current.forEach((molecule) => {
+        this.controls.moorhenInstance.getMoleculeList().forEach((molecule) => {
             Object.keys(molecule.ligandDicts).forEach((compId) => {
                 if (!Object.keys(ligandData).includes(compId)) {
                     ligandData[compId] = molecule.ligandDicts[compId];
@@ -712,6 +645,8 @@ export default class MoorhenWrapper {
     }
 
     async exit() {
+        // catches preferences set back to their default, which Moorhen does not report
+        await this.exportPreferences().catch((err) => console.log(err));
         const molData = await this.getMoleculeData();
         const ligData = this.getLigData();
         const viewData = this.getViewSettings(this.controls.store);

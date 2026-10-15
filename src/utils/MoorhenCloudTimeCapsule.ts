@@ -1,4 +1,4 @@
-import { moorhen } from "moorhen/types/moorhen";
+import type { moorhen } from "moorhen/types/moorhen.d.ts";
 import LocalForage from "localforage";
 
 export interface CloudBackupInterface extends moorhen.backupKey {

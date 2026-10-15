@@ -1,16 +1,11 @@
 import React from "react";
 import { useRef, useState, useEffect } from "react";
-import {
-    MoorhenContainer,
-    MoorhenReduxStoreType,
-    RootState,
-    useCommandCentre,
-} from "moorhen/react-lib";
-import type { MainMenuEntryJSX } from "moorhen/react-lib";
-import { MoorhenMolecule, MoorhenMap, CommandCentre, MoorhenTimeCapsule, useMoorhenInstance } from "moorhen/react-lib";
+import { MoorhenContainer, RootState, useCommandCentre } from "moorhen/react-lib";
+import type { MainMenuEntryJSX } from "moorhen/types/src/components/menu-system/mainMenuConfig.d.ts";
+import { CommandCentre, MoorhenInstance, MoorhenTimeCapsule, useMoorhenInstance } from "moorhen/react-lib";
 import { MoorhenLegendToast } from "./misc/MoorhenLegendToast";
 import { MoorhenExitMenu } from "./NavBarMenus/MoorhenExitMenu";
-import { moorhen } from "moorhen/types/moorhen";
+import type { moorhen } from "moorhen/types/moorhen.d.ts";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { AnyAction, Dispatch } from "@reduxjs/toolkit";
 import { CloudStorageInstanceInterface } from "../utils/MoorhenCloudTimeCapsule";
@@ -18,13 +13,11 @@ import type { Store } from "@reduxjs/toolkit";
 
 export type MoorhenCloudControls = {
     setNotifyNewContent: React.Dispatch<React.SetStateAction<boolean>>;
-    setLegendText: React.Dispatch<React.SetStateAction<React.JSX.Element>>;
+    setLegendText: React.Dispatch<React.SetStateAction<string | React.JSX.Element>>;
     setBusyFetching: React.Dispatch<React.SetStateAction<boolean>>;
     commandCentre: React.RefObject<CommandCentre>;
-    timeCapsuleRef: React.RefObject<MoorhenTimeCapsule>;
-    moleculesRef: React.RefObject<MoorhenMolecule[]>;
-    mapsRef: React.RefObject<MoorhenMap[]>;
-    activeMapRef: React.RefObject<MoorhenMap>;
+    timeCapsuleRef: React.RefObject<MoorhenTimeCapsule | null>;
+    moorhenInstance: MoorhenInstance;
     dispatch: Dispatch<AnyAction>;
     store: Store<RootState>;
 };
@@ -45,10 +38,6 @@ interface MoorhenCloudAppPropsInterface {
 
 export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
     const timeCapsuleRef = useRef<MoorhenTimeCapsule | null>(null);
-    // const commandCentre = useRef<moorhen.CommandCentre | null>(null);
-    const moleculesRef = useRef<MoorhenMolecule[] | null>(null);
-    const mapsRef = useRef<moorhen.Map[] | null>(null);
-    const activeMapRef = useRef<moorhen.Map | null>(null);
     const commandCentre = useCommandCentre();
     const store = useStore<RootState>();
     const moorhenInstance = useMoorhenInstance();
@@ -64,9 +53,6 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         ...props,
         commandCentre,
         timeCapsuleRef,
-        moleculesRef,
-        mapsRef,
-        activeMapRef,
     };
 
     const extraMainMenu: MainMenuEntryJSX = {
@@ -75,8 +61,15 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
         component: <MoorhenExitMenu key={"exit"} exitCallback={props.exitCallback} />,
         icon: "MatSymLogout",
     };
+    // MoorhenContainer calls onInitialisationCompleted more than once (StrictMode double mount, and
+    // before the preferences are restored), so only add the Exit menu the first time
+    const exitMenuAdded = useRef<boolean>(false);
     const onInitialisationCompletedCallback = async () => {
-        moorhenInstance.menuSystem?.addMainMenu(extraMainMenu);
+        if (exitMenuAdded.current || !moorhenInstance.menuSystem) {
+            return;
+        }
+        moorhenInstance.menuSystem.addMainMenu(extraMainMenu);
+        exitMenuAdded.current = true;
     };
 
     useEffect(() => {
@@ -87,9 +80,7 @@ export const MoorhenCloudApp = (props: MoorhenCloudAppPropsInterface) => {
                 setNotifyNewContent,
                 commandCentre,
                 timeCapsuleRef,
-                moleculesRef,
-                mapsRef,
-                activeMapRef,
+                moorhenInstance,
                 dispatch,
                 store,
             });
