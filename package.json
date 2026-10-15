@@ -1,32 +1,48 @@
 {
-  "name": "moorhenwrapper",
-  "version": "0.1.0",
-  "description": "A wrapper for Moorhen web molecular graphics program",
-  "main": "webcoot.js",
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "typescript": "^5"
-  },
-  "scripts": {
-    "build-cloud-dev": "webpack  --mode development --devtool inline-source-map --env destination='ccp4Cloud'",
-    "build-cloud": "webpack --mode production --env destination='ccp4Cloud'"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/moorhen-coot/MoorhenWrapper.git"
-  },
-  "author": "",
-  "bugs": {
-    "url": "https://github.com/moorhen-coot/MoorhenWrapper/issues"
-  },
-  "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "moorhen": "^0.22.3",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  }
+    "name": "moorhenwrapper",
+    "version": "0.1.0",
+    "description": "A wrapper for Moorhen web molecular graphics program",
+    "main": "webcoot.js",
+    "devDependencies": {
+        "@types/node": "^20",
+        "@types/react": "19.2",
+        "@types/react-dom": "19.2",
+        "copy-webpack-plugin": "^14.0.0",
+        "css-loader": "^7.1.5",
+        "file-loader": "^6.2.0",
+        "mini-css-extract-plugin": "^2.10.2",
+        "tailwindcss": "^4",
+        "terser-webpack-plugin": "^5.6.1",
+        "ts-loader": "^9.6.2",
+        "typescript": "^5",
+        "webpack": "^5.110.3",
+        "webpack-cli": "^7.2.3"
+    },
+    "scripts": {
+        "build-cloud-dev": "webpack  --mode development --devtool inline-source-map --env destination='ccp4Cloud'",
+        "build-cloud": "webpack --mode production --env destination='ccp4Cloud'",
+        "force-install": "rm -rf node_modules/moorhen && rm package-lock.json && npm cache clean --force && npm install"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/moorhen-coot/MoorhenWrapper.git"
+    },
+    "author": "",
+    "bugs": {
+        "url": "https://github.com/moorhen-coot/MoorhenWrapper/issues"
+    },
+    "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^9.4.0",
+        "@reduxjs/toolkit": "^2.12.0",
+        "html-react-parser": "^6.1.7",
+        "localforage": "^1.10.0",
+        "moorhen": "file:///home/clement/Projects/Moorhen/baby-gru/dist/moorhen-1.0.2.tgz",
+        "react": "19.2.8",
+        "react-bootstrap": "^2.10.10",
+        "react-dom": "19.2.8",
+        "react-redux": "^9.3.0"
+    }
 }

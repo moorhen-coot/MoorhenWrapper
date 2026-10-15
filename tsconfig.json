@@ -11,7 +11,7 @@
         "esModuleInterop": true,
         "jsx": "react-jsx",
         "sourceMap": true,
-        "moduleResolution": "node"
+        "moduleResolution": "bundler"
       },
       "include": [
         "src/*",

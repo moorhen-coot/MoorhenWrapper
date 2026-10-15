@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, Toast, ToastContainer } from 'react-bootstrap';
 import { CloudSyncOutlined, NewReleasesOutlined } from '@mui/icons-material';
-import { moorhen } from "moorhen/types/moorhen"
+import type { moorhen } from "moorhen/types/moorhen.d.ts"
 import { useSelector } from 'react-redux';
 
 type MoorhenLegendToastPropsType = { 
