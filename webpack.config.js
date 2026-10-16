@@ -32,7 +32,7 @@ module.exports = (env, argv) => {
                 ],
             }),
         ],
-        entry: path.join(__dirname, "webcoot.js"),
+        entry: path.join(__dirname, "src", "ccp4cloud.ts"),
         target: "web",
         optimization: {
             minimize: argv.mode === "development" ? false : true,

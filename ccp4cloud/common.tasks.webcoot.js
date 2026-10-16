@@ -210,9 +210,9 @@ if (!__template)  {
         if (file_key.lib in ligands[i].files)  {
           let ligURL = this.getURL ( 'input/' + ligands[i].files[file_key.lib] );
           inputFiles.push ({
-            type : 'ligand',
-            // args : [ ligURL ]
-            args : [ ligURL,[ligands[i].code] ]
+            type  : 'ligand',
+            url   : ligURL,
+            codes : [ligands[i].code]
           });
         }
     }
@@ -240,8 +240,9 @@ if (!__template)  {
       if (file_key.lib in istruct.files)  {
         let libURL = this.getURL ( 'input/' + istruct.files[file_key.lib] );
         inputFiles.push ({
-          type : 'ligand',
-          args : [ libURL,[] ]
+          type  : 'ligand',
+          url   : libURL,
+          codes : []    // register the dictionary only
         });
       }
       if ((file_key.xyz in istruct.files) || (file_key.mmcif in istruct.files))  {
@@ -251,7 +252,8 @@ if (!__template)  {
         else  xyzURL = this.getURL ( xyzURL + istruct.files[file_key.xyz]   );
         inputFiles.push ({
           type : 'pdb',
-          args : [ xyzURL,'molecule' ]
+          url  : xyzURL,
+          name : 'molecule'
         });
       }
       if ((this._type=='TaskWebCoot') && (file_key.mtz in istruct.files))  {
@@ -317,7 +319,8 @@ if (!__template)  {
           let structURL = this.getURL ( 'input/' + aux_struct[i].files[file_key.xyz] );
           inputFiles.push ({
             type : 'pdb',
-            args : [ structURL,'molecule_' + (i+1) ]
+            url  : structURL,
+            name : 'molecule_' + (i+1)
           });
         }
     }

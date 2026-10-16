@@ -24,9 +24,9 @@
         <script src="./moorhen.js" charset="utf-8"></script>
         <script type="text/javascript" defer="defer">
             const rootId = "root";
-            const mode = "building";
             const inputFiles = [
-                { type: "pdb", args: [`./MoorhenAssets/tutorials/moorhen-tutorial-structure-number-1.pdb`, `mol-1`] },
+                { type: "ligand", url: "./MoorhenAssets/tutorials/NUT.cif", codes: ["NUT"] },
+                { type: "pdb", url: "./MoorhenAssets/tutorials/moorhen-tutorial-structure-number-1.ent", name: "mol-1" },
                 {
                     type: "mtz",
                     url: `./MoorhenAssets/tutorials/moorhen-tutorial-map-number-1.mtz`,
@@ -50,32 +50,50 @@
                     ],
                 },
             ];
-            const urlPrefix = "./MoorhenAssets/";
+            // Standalone test page: the same calls as jsCoFE's ccp4cloud/webcoot.js, with console logging
+            // instead of CCP4 Cloud callbacks (backups are kept in memory)
+            const absoluteURL = (url) => new URL(url, document.baseURI).href;
+            const backups = new Map();
+            // the molecule is named after the file name without its extension: keep the source's extension
+            const extension = (url) => new URL(absoluteURL(url)).pathname.match(/\.(pdb|ent|cif|mmcif)$/i)?.[0] ?? ".pdb";
 
-            let moorhenWrapper = new moorhen.MoorhenWrapper(urlPrefix);
-            moorhenWrapper.setAceDRGMakeLinkCallback((atomOneFormData, atomTwoFormData) => {
-                console.log(atomOneFormData);
-                console.log(atomTwoFormData);
-            });
+            (async () => {
+                moorhen.registerMoorhenWebComponent();
+                const element = document.createElement("moorhen-web-component");
+                element.urlPrefix = absoluteURL("./MoorhenAssets");
+                element.allowScripting = false;
+                element.disableFileUploads = true;
+                element.backupStorage = moorhen.createCallbackBackupStorage({
+                    save: async (backup) => void backups.set(backup.serNo, backup),
+                    load: async (serNo) => backups.get(serNo),
+                    remove: async (serNo) => void backups.delete(serNo),
+                    list: async () => [...backups.values()],
+                });
+                element.style.height = "100vh";
+                document.getElementById(rootId).appendChild(element);
+                const instance = await element.getMoorhenInstance();
 
-            switch (mode) {
-                case "view-update":
-                    moorhenWrapper.setWorkMode("view");
-                    moorhenWrapper.setRootId(rootId);
-                    moorhenWrapper.setInputFiles(inputFiles);
-                    moorhenWrapper.start();
-                    break;
-                case "view":
-                    moorhenWrapper.setWorkMode("view");
-                    moorhenWrapper.setRootId(rootId);
-                    moorhenWrapper.setInputFiles(inputFiles);
-                    moorhenWrapper.start();
-                    break;
-                default:
-                    moorhenWrapper.setRootId(rootId);
-                    moorhenWrapper.setInputFiles(inputFiles);
-                    moorhenWrapper.start();
-            }
+                instance.preferences.onChange((stored) => console.log("preferences", stored));
+                instance.menuSystem.addMainMenu({
+                    type: "action",
+                    label: "Exit",
+                    icon: "MatSymLogout",
+                    action: async () => console.log("exit", await moorhen.getCloudExitData(instance)),
+                });
+
+                for (const f of inputFiles.filter((f) => f.type === "ligand")) {
+                    await moorhen.loadCloudDictionary(instance, absoluteURL(f.url), f.codes);
+                }
+                await Promise.all(
+                    inputFiles.map((f) =>
+                        f.type === "pdb"
+                            ? instance.files.loadFiles({ url: absoluteURL(f.url), filename: f.name + extension(f.url) }, "cloud")
+                            : f.type === "mtz"
+                              ? instance.files.loadMtz(absoluteURL(f.url), f.maps, "cloud")
+                              : null,
+                    ),
+                );
+            })();
         </script>
     </body>
 </html>

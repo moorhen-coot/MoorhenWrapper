@@ -3,3 +3,4 @@ node_modules
 tsDist
 dist
 copy-to-cloud.sh
+CLOUD_HOST_TEST_SPEC.md

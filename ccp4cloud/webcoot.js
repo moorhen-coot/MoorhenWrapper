@@ -35,7 +35,7 @@ let BACKUPS        = [];
 let backupsFPath   = 'backups/backups.json';
 let backupFPrefix  = 'backups/backup_';
 
-let moorhenWrapper = null;
+let moorhenInstance = null;
 
 
 function saveBackupList()  {
@@ -203,8 +203,7 @@ let oReq = new XMLHttpRequest();
 function onWindowMessage ( event )  {
 var edata = event.data;
   if (edata.command=='call_exit')  {
-    if (moorhenWrapper)
-      moorhenWrapper.exit();
+    onExit();
   } else
     alert ( ' signals back ' + JSON.stringify(edata) );
 }
@@ -218,41 +217,73 @@ if (window.addEventListener) {
 
 
 
-function launchApp ( params )  {
+// The page is an about:srcdoc iframe: resolve URLs against document.baseURI (window.location is about:srcdoc)
+function absoluteURL ( url )  {
+  return new URL ( url,document.baseURI ).href;
+}
+
+async function onExit()  {
+  if (moorhenInstance)
+    exitCallback ( await moorhen.getCloudExitData(moorhenInstance) );
+}
+
+async function loadInputFiles ( inputFiles )  {
+//   inputFiles (from common.tasks.webcoot.js), one of:
+//     { type:'ligand', url, codes }   dictionary; codes: monomers to create ([] = register only)
+//     { type:'pdb'   , url, name   }   structure, the molecule is named 'name'
+//     { type:'mtz'   , url, maps   }   all maps read from one MTZ file (MtzMapRequest[])
+
+  // dictionaries first, so that the structures loaded afterwards can use them
+  for (let i=0;i<inputFiles.length;i++)
+    if (inputFiles[i].type=='ligand')
+      await moorhen.loadCloudDictionary ( moorhenInstance,absoluteURL(inputFiles[i].url),
+                                          inputFiles[i].codes )
+                   .catch ( function(err){ console.log(err); } );
+
+  await Promise.all ( inputFiles.map ( function(f){
+    let load = null;
+    if (f.type=='pdb')  {
+      // the molecule is named after the file name without its extension: keep the source's extension
+      let ext = new URL(absoluteURL(f.url)).pathname.match(/\.(pdb|ent|cif|mmcif)$/i);
+      load = moorhenInstance.files.loadFiles (
+                { url : absoluteURL(f.url), filename : f.name + (ext ? ext[0] : '.pdb') },'cloud' );
+    } else if (f.type=='mtz')
+      load = moorhenInstance.files.loadMtz ( absoluteURL(f.url),f.maps,'cloud' );
+    return load ? load.catch ( function(err){ console.log(err); } ) : null;
+  }));
+
+}
+
+async function launchApp ( params )  {
 
   console.log ( ' >>>>>>>> window.isSecureContext=' + window.isSecureContext );
   console.log ( ' >>>>>>>> window.crossOriginIsolated=' + window.crossOriginIsolated );
 
-  moorhenWrapper = new moorhen.MoorhenWrapper ( urlPrefix );
-  moorhenWrapper.setMonomerLibrary ( monomerLibrary );
+  // start-up settings must be set before the element is attached
+  moorhen.registerMoorhenWebComponent();
+  let element = document.createElement ( 'moorhen-web-component' );
+  element.urlPrefix          = absoluteURL ( urlPrefix      );
+  element.monomerLibraryPath = absoluteURL ( monomerLibrary );
+  element.allowScripting     = false;
+  element.disableFileUploads = true;
+  element.backupStorage      = moorhen.createCallbackBackupStorage ({
+                                  save   : saveBackupCallback,
+                                  load   : loadBackupCallback,
+                                  remove : removeBackupCallback,
+                                  list   : loadBackupList
+                               });
+  element.style.height = '100vh';
+  document.getElementById(rootId).appendChild ( element );
+  moorhenInstance = await element.getMoorhenInstance();
 
-  moorhenWrapper.setRootId     ( rootId     );
-  moorhenWrapper.setInputFiles ( params.inputFiles );
-  if (params.preferences)  moorhenWrapper.setPreferences         ( params.preferences );
-  if (params.no_data_msg)  moorhenWrapper.setNoDataLegendMessage ( params.no_data_msg );
-  moorhenWrapper.addOnChangePreferencesListener ( savePreferencesCallback );
+  // only model building is supported: jsCoFE never launches the 'view'/'view-update' modes
+  await moorhenInstance.preferences.import ( params.preferences );
+  moorhenInstance.preferences.onChange ( savePreferencesCallback );
+  moorhenInstance.menuSystem.addMainMenu ({
+    type : 'action', label : 'Exit', icon : 'MatSymLogout', action : onExit
+  });
 
-  switch (params.mode)  {
-    case "view-update"  : moorhenWrapper.setWorkMode       ( 'view'   );
-                          moorhenWrapper.setUpdateInterval ( params.interval );
-                        break;
-    case "view"         : moorhenWrapper.setWorkMode       ( 'view'   );
-                        break;
-    default             : //moorhenWrapper.addOnExportListener       ( exportToCloudCallback );
-                          moorhenWrapper.addOnExitListener         ( exitCallback          );
-                          moorhenWrapper.setBackupSaveListener     ( saveBackupCallback    );
-                          moorhenWrapper.setBackupListLoadListener ( loadBackupList        );                          //  moorhenWrapper.start()
-                          moorhenWrapper.setBackupLoadListener     ( loadBackupCallback    );
-                          moorhenWrapper.setRemoveBackupListener   ( removeBackupCallback  );
-  }
-
-  // ##### dirty trick: do not set view settings before lighting in Moorhen is fixed;
-  // ##### setting the view scene destroys the lighting object and all model colours 
-  // ##### change to black
-  // if (('viewSettings' in params) && params.viewSettings)
-  //   moorhenWrapper.setViewSettings ( params.viewSettings );
-
-  moorhenWrapper.start();
+  await loadInputFiles ( params.inputFiles );
 
 }
 
