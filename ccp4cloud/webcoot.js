@@ -272,7 +272,11 @@ async function launchApp ( params )  {
                                   remove : removeBackupCallback,
                                   list   : loadBackupList
                                });
-  element.style.height = '100vh';
+  // fill the iframe: no default body margin, no page scrollbars
+  document.documentElement.style.height = '100%';
+  document.body.style.cssText          += 'height:100%;margin:0;overflow:hidden;';
+  document.getElementById(rootId).style.height = '100%';
+  element.style.height = '100%';
   document.getElementById(rootId).appendChild ( element );
   moorhenInstance = await element.getMoorhenInstance();
 

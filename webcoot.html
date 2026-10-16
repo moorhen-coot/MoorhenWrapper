@@ -69,7 +69,11 @@
                     remove: async (serNo) => void backups.delete(serNo),
                     list: async () => [...backups.values()],
                 });
-                element.style.height = "100vh";
+                // fill the page: no default body margin, no page scrollbars
+                document.documentElement.style.height = "100%";
+                document.body.style.cssText += "height:100%;margin:0;overflow:hidden;";
+                document.getElementById(rootId).style.height = "100%";
+                element.style.height = "100%";
                 document.getElementById(rootId).appendChild(element);
                 const instance = await element.getMoorhenInstance();
 
