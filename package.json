@@ -1,6 +1,6 @@
 {
     "name": "moorhenwrapper",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "A wrapper for Moorhen web molecular graphics program",
     "main": "webcoot.js",
     "devDependencies": {
@@ -31,6 +31,6 @@
     },
     "homepage": "https://github.com/moorhen-coot/MoorhenWrapper#readme",
     "dependencies": {
-        "moorhen": "file:///home/clement/Projects/Moorhen/baby-gru/dist/moorhen-1.0.2.tgz"
+        "moorhen": "1.1.0"
     }
 }
